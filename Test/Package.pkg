@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Package xmlns="http://br-automation.co.at/AS/Package">
+  <Objects>
+    <Object Type="File">MachineGlobalVariables.var</Object>
+    <Object Type="File">MachineGlobalTypes.typ</Object>
+    <Object Type="Program" Language="IEC">MachineProgram</Object>
+    <Object Type="File">MachineStates.tmx</Object>
+    <Object Type="File">MachineOperatingModes.tmx</Object>
+    <Object Type="Package">Tanks</Object>
+    <Object Type="Package">Mixer</Object>
+    <Object Type="Package">Outfeed</Object>
+    <Object Type="Package">Infrastructure</Object>
+    <Object Type="Package">HMI</Object>
+    <Object Type="Package">ciao</Object>
+  </Objects>
+</Package>

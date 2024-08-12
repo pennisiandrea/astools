@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template ID="Module">
+	<Keywords>
+		<Keyword ID="__module_name__"/>
+		<Keyword ID="__MODULE_NAME__"/>
+	</Keywords>
+
+	<Instructions>
+		<Instruction Type="Copy">
+			<Source Path="$TEMPLATE_PATH\__module_name__" />
+			<Destination Path="$USER_PATH" />
+		</Instruction>
+
+		<Instruction Type="AddXmlElement">
+			<XmlElements2Add Path="/ns:Package/ns:Objects"> 
+				<Object Type="Package">__module_name__</Object>
+			</XmlElements2Add>
+			<Destination Path="$USER_PATH\Package.pkg" />
+		</Instruction>
+
+		<Instruction Type="ReplaceKeywords">
+			<Destination Path="$USER_PATH\__module_name__" />
+		</Instruction>
+		<Instruction Type="ReplaceKeywords">
+			<Destination Path="$USER_PATH\Package.pkg" />
+		</Instruction>
+
+
+	</Instructions>
+</Template>
