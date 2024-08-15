@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema targetNamespace="http://www.br-automation.com/iat2015/styles/engineering/v1"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:sd="http://www.br-automation.com/iat2015/styles/engineering/v1"
+        xmlns:kt="http://www.br-automation.com/iat2015/keywordTypes/v1"
+        elementFormDefault="qualified">
+	<xs:complexType name="widgets.brease.BasicSlider">
+		<xs:complexContent>
+			<xs:extension base="sd:stylesBase">
+				<xs:attribute name="borderWidth" use="optional" type="kt:PixelValCollection"></xs:attribute>
+				<xs:attribute name="cornerRadius" use="optional" type="kt:PixelValCollection"></xs:attribute>
+				<xs:attribute name="borderStyle" use="optional" type="kt:BorderStyle"></xs:attribute>
+				<xs:attribute name="backColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="backGroundGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="thumbColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="thumbGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="borderColor" use="optional" type="kt:ColorCollection"></xs:attribute>
+				<xs:attribute name="opacity" use="optional" type="kt:Opacity"></xs:attribute>
+				<xs:attribute name="trackColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="trackGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="fillColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="fillGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="padding" use="optional" type="kt:Padding"></xs:attribute>
+				<xs:attribute name="margin" use="optional" type="kt:Margin"></xs:attribute>
+				<xs:attribute name="shadow" use="optional" type="kt:Shadow"></xs:attribute>
+				<xs:attribute name="fontSize" use="optional" type="kt:PixelVal"></xs:attribute>
+				<xs:attribute name="fontName" use="optional" type="kt:FontName"></xs:attribute>
+				<xs:attribute name="textColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="valueDisplayTextColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="valueDisplayBackColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="valueDisplayBackGroundGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="ticksColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="disabledThumbColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="disabledTrackColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="disabledThumbGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="disabledTrackGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="disabledFillColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="disabledFillGradient" use="optional" type="kt:Gradient"></xs:attribute>
+				<xs:attribute name="disabledBackColor" use="optional" type="kt:Color"></xs:attribute>
+				<xs:attribute name="disabledBackGroundGradient" use="optional" type="kt:Gradient"></xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio Version="4.12.5.95 SP"?>
+<ProjectSettings xmlns="http://br-automation.co.at/AS/ProjectSettings">
+  <ConfigurationManager ActiveConfigurationName="Config1" />
+  <Deployment Value="ActiveCpu" />
+  <ExportProject ExportFilePath="C:\Data\test\test\test.zip" />
+  <Print Footer="%cPage: %p" Header="%lProject: %n%c%x" />
+</ProjectSettings>

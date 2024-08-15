@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WidgetLibrary xmlns="http://www.br-automation.com/iat2014/widget">
+	<Widget name="widgets.brease.BasicSlider">
+		<ASEngineeringInfo>
+			<IsProjectable>true</IsProjectable>
+			<LicenseInfo>unlicensed</LicenseInfo>
+		</ASEngineeringInfo>
+		<Dependencies>
+			<Files>
+				<File>brease/core/BaseWidget.js</File>
+				<File>brease/events/BreaseEvent.js</File>
+				<File>widgets/brease/BasicSlider/libs/Renderer.js</File>
+				<File>brease/enum/Enum.js</File>
+				<File>brease/core/Types.js</File>
+				<File>brease/core/Utils.js</File>
+				<File>brease/decorators/MeasurementSystemDependency.js</File>
+				<File>brease/datatype/Node.js</File>
+				<File>brease/config/NumberFormat.js</File>
+				<File>brease/decorators/LanguageDependency.js</File>
+				<File>widgets/brease/BasicSlider/libs/Config.js</File>
+				<File>widgets/brease/common/libs/wfUtils/UtilsEditableBinding.js</File>
+				<File>brease/decorators/DragAndDropCapability.js</File>
+				<File>widgets/brease/common/libs/BreaseResizeObserver.js</File>
+				<File>brease/decorators/ContentActivatedDependency.js</File>
+				<File>widgets/brease/common/DragDropProperties/libs/DroppablePropertiesEvents.js</File>
+			</Files>
+			<Widgets>
+				<Widget>widgets/brease/BasicSlider/BasicSlider.js</Widget>
+			</Widgets>
+		</Dependencies>
+		<Categories>
+			<Category name="Category">Numeric</Category>
+		</Categories>
+		<Descriptions>
+			<Description name="short">Schieberegler horizontal/vertical</Description>
+			<Description name="de">Ermöglicht dem Benutzer einen numerischen Wert mit einem Schiebeschalter zu verändern</Description>
+			<Description name="en">Enables the user to change a numeric value by a slider</Description>
+		</Descriptions>
+		<Inheritance>
+			<Class level="0">widgets.brease.BasicSlider</Class>
+			<Class level="1">brease.core.BaseWidget</Class>
+		</Inheritance>
+		<Parents>
+			<Parent>*</Parent>
+		</Parents>
+		<Children>
+		</Children>
+		<Methods>
+			<Method name="Focus" read="false">
+				<Description>Sets focus on the widget element, if it can be focused and keyboardOperation=true</Description>
+			</Method>
+			<Method name="GetValue" read="true">
+				<Description>get the value</Description>
+				<Result type="Number"/>
+			</Method>
+			<Method name="SetEnable" read="false">
+				<Description>Sets the state of property «enable»</Description>
+				<Arguments>
+					<Argument name="value" type="Boolean" index="0" required="true"/>
+				</Arguments>
+			</Method>
+			<Method name="SetImage" read="false">
+				<Description>Sets image</Description>
+				<Arguments>
+					<Argument name="image" type="ImagePath" index="0" required="true"/>
+				</Arguments>
+			</Method>
+			<Method name="SetStyle" read="false">
+				<Arguments>
+					<Argument name="value" type="StyleReference" index="0" required="true"/>
+				</Arguments>
+			</Method>
+			<Method name="SetValue" read="false">
+				<Description>sets the value</Description>
+				<Arguments>
+					<Argument name="value" type="Number" index="0" required="true"/>
+				</Arguments>
+			</Method>
+			<Method name="SetVisible" read="false">
+				<Description>Sets the state of property «visible»</Description>
+				<Arguments>
+					<Argument name="value" type="Boolean" index="0" required="true"/>
+				</Arguments>
+			</Method>
+			<Method name="ShowTooltip" read="false"/>
+		</Methods>
+		<Events>
+			<Event name="Click">
+				<Description>Fired when element is clicked on.</Description>
+				<Arguments>
+					<Argument name="origin" type="String" index="0" required="true">
+						<Description>id of widget that triggered this event</Description>
+					</Argument>
+					<Argument name="horizontalPos" type="String" index="1" required="true">
+						<Description>horizontal position of click in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+					<Argument name="verticalPos" type="String" index="2" required="true">
+						<Description>vertical position of click in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="DisabledClick">
+				<Description>Fired when disabled element is clicked on.</Description>
+				<Arguments>
+					<Argument name="origin" type="String" index="0" required="true">
+						<Description>id of widget that triggered this event</Description>
+					</Argument>
+					<Argument name="hasPermission" type="Boolean" index="1" required="true">
+						<Description>defines if the state is caused due to missing roles of the current user</Description>
+					</Argument>
+					<Argument name="horizontalPos" type="String" index="2" required="true">
+						<Description>horizontal position of click in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+					<Argument name="verticalPos" type="String" index="3" required="true">
+						<Description>vertical position of click in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="EnableChanged">
+				<Description>Fired when operability of the widget changes.</Description>
+				<Arguments>
+					<Argument name="value" type="Boolean" index="0" required="true">
+						<Description>operability</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="FocusIn">
+				<Description>Fired when the widgets gets focus</Description>
+			</Event>
+			<Event name="FocusOut">
+				<Description>Fired when the widgets lost focus</Description>
+			</Event>
+			<Event name="MouseDown">
+				<Description>Fired when widget enters mouseDown state</Description>
+				<Arguments>
+					<Argument name="horizontalPos" type="String" index="0" required="true">
+						<Description>horizontal position of mouse in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+					<Argument name="verticalPos" type="String" index="1" required="true">
+						<Description>vertical position of mouse in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="MouseUp">
+				<Description>Fired when widget enters mouseUp state</Description>
+				<Arguments>
+					<Argument name="horizontalPos" type="String" index="0" required="true">
+						<Description>horizontal position of mouse in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+					<Argument name="verticalPos" type="String" index="1" required="true">
+						<Description>vertical position of mouse in pixel i.e &apos;10px&apos;</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="OnDragEnter">
+				<Description>Fired when element has onDragEnter.</Description>
+				<Arguments>
+					<Argument name="contentId" type="String" index="0" required="true">
+						<Description>content id of the widget that has been entering the droppable widget</Description>
+					</Argument>
+					<Argument name="widgetId" type="String" index="1" required="true">
+						<Description>id of the widget that has been entering the droppable widget</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="OnDragLeave">
+				<Description>Fired when element has OnDragLeave.</Description>
+				<Arguments>
+					<Argument name="contentId" type="String" index="0" required="true">
+						<Description>content id of the widget that has been leaving the droppable widget</Description>
+					</Argument>
+					<Argument name="widgetId" type="String" index="1" required="true">
+						<Description>id of the widget that has been leaving the droppable widget</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="OnDrop">
+				<Description>Fired when element has OnDrop.</Description>
+				<Arguments>
+					<Argument name="contentId" type="String" index="0" required="true">
+						<Description>content id of the widget that has been dropped on the droppable widget</Description>
+					</Argument>
+					<Argument name="widgetId" type="String" index="1" required="true">
+						<Description>id of the widget that has been dropped on the droppable widget</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+			<Event name="ValueChanged">
+				<Description>Fired when index changes.</Description>
+				<Arguments>
+					<Argument name="value" type="Number" index="0" required="true"/>
+				</Arguments>
+			</Event>
+			<Event name="VisibleChanged">
+				<Description>Fired when the visibility of the widget changes.</Description>
+				<Arguments>
+					<Argument name="value" type="Boolean" index="0" required="true">
+						<Description>visibility</Description>
+					</Argument>
+				</Arguments>
+			</Event>
+		</Events>
+		<Properties>
+			<Property name="changeOnMove" type="Boolean" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="true">
+				<Description>Send value to plc during Movement of the slider if true.</Description>
+			</Property>
+			<Property name="ellipsis" type="Boolean" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="false">
+				<Description>Defines if the Value inside the Valuedisplay should be shown with ellipsis.</Description>
+			</Property>
+			<Property name="enable" type="Boolean" initOnly="false" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="true">
+				<Description>Initial option to enable widget.</Description>
+			</Property>
+			<Property name="format" type="brease.config.MeasurementSystemFormat" initOnly="false" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="{&apos;metric&apos;:{ &apos;decimalPlaces&apos; : 1, &apos;minimumIntegerDigits&apos; : 1 }, &apos;imperial&apos; :{ &apos;decimalPlaces&apos; : 1, &apos;minimumIntegerDigits&apos; : 1 }, &apos;imperial-us&apos; :{ &apos;decimalPlaces&apos; : 1, &apos;minimumIntegerDigits&apos; : 1 }}">
+				<Description>NumberFormat for every measurement system</Description>
+			</Property>
+			<Property name="image" type="ImagePath" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="">
+				<Description>Path to an optional image for the slider thumb.</Description>
+			</Property>
+			<Property name="largeChange" type="UNumber" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="10">
+				<Description>Step interval of the slider.</Description>
+			</Property>
+			<Property name="majorTicks" type="UInteger" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="5">
+				<Description>Number of displayed ticks of the slider.</Description>
+			</Property>
+			<Property name="maxValue" type="Number" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="100">
+				<Description>Maximal displayable value.</Description>
+			</Property>
+			<Property name="minValue" type="Number" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="0">
+				<Description>Minimal displayable value.</Description>
+			</Property>
+			<Property name="node" type="brease.datatype.Node" initOnly="false" localizable="false" editableBinding="true" readOnly="false" required="false" projectable="true" category="Data" defaultValue="">
+				<Description>Value with unit for node binding.</Description>
+			</Property>
+			<Property name="orientation" type="brease.enum.Orientation" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="LeftToRight">
+				<Description>Orientation of the slider.</Description>
+			</Property>
+			<Property name="permissionOperate" type="RoleCollection" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Accessibility">
+				<Description>restricts operability to users, which have given roles</Description>
+			</Property>
+			<Property name="permissionView" type="RoleCollection" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Accessibility">
+				<Description>restricts visibility to users, which have given roles</Description>
+			</Property>
+			<Property name="scaleOffset" type="PixelVal" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="15px">
+				<Description>Specifies the padding between the scale and the track of the widget in pixel.</Description>
+			</Property>
+			<Property name="showTickNumbers" type="Boolean" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="false">
+				<Description>Option to show the numbers next to the ticks.</Description>
+			</Property>
+			<Property name="showUnit" type="Boolean" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="false">
+				<Description>Determines if the unit is shown in the value display.</Description>
+			</Property>
+			<Property name="showValueDisplay" type="Boolean" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="false">
+				<Description>Option to show value and unit in an output next to the slider thumb.</Description>
+			</Property>
+			<Property name="smallChange" type="UNumber" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="1">
+				<Description>Step interval of the slider by dragging the thumb.</Description>
+			</Property>
+			<Property name="style" type="StyleReference" initOnly="false" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="default">
+				<Description>reference to a style for this widget type</Description>
+			</Property>
+			<Property name="tabIndex" type="Integer" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="-1">
+				<Description>sets if a widget should have autofocus enabled (0), the order of the focus (&gt;0),
+or if autofocus should be disabled (-1)				</Description>
+			</Property>
+			<Property name="thumbSize" type="PixelVal" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="25px">
+				<Description>Specifies the size of the slider thumb in pixel.</Description>
+			</Property>
+			<Property name="tickPosition" type="brease.enum.TickStyle" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="none">
+				<Description>Position of the axis with the ticks.</Description>
+			</Property>
+			<Property name="tooltip" type="String" initOnly="true" localizable="true" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="">
+				<Description>reference to a tooltip for a widget</Description>
+			</Property>
+			<Property name="trackSize" type="PixelVal" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="7px">
+				<Description>Thickness of the slider track in pixel.</Description>
+			</Property>
+			<Property name="unit" type="brease.config.MeasurementSystemUnit" initOnly="false" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="">
+				<Description>Unit code for every measurement system.</Description>
+			</Property>
+			<Property name="value" type="Number" initOnly="false" localizable="false" editableBinding="true" readOnly="false" required="false" projectable="true" nodeRefId="node" category="Data" defaultValue="0">
+				<Description>Initial visible value of slider.</Description>
+			</Property>
+			<Property name="valueDisplaySize" type="PixelVal" initOnly="true" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Appearance" defaultValue="35px">
+				<Description>Size of the value display in pixel.</Description>
+			</Property>
+			<Property name="visible" type="Boolean" initOnly="false" localizable="false" editableBinding="false" readOnly="false" required="false" projectable="true" category="Behavior" defaultValue="true">
+				<Description>change visibility</Description>
+			</Property>
+		</Properties>
+		<StyleProperties>
+			<StyleProperty name="width" type="Size" not_styleable="true" owner="widgets.brease.BasicSlider" category="Layout" groupRefId="Size" groupOrder="1" default="250">
+				<StyleElement attribute="@include elemWidth($value)"/>
+				<Description>outer width of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="height" type="Size" not_styleable="true" owner="widgets.brease.BasicSlider" category="Layout" groupRefId="Size" groupOrder="2" default="100">
+				<StyleElement attribute="@include elemHeight($value)"/>
+				<Description>outer height of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="top" type="Integer" not_styleable="true" owner="brease.core.BaseWidget" category="Layout" groupRefId="Position" groupOrder="1">
+				<StyleElement attribute="@include elemTop($value)"/>
+				<Description>absolute position measured from top boundary of parent container</Description>
+			</StyleProperty>
+			<StyleProperty name="left" type="Integer" not_styleable="true" owner="brease.core.BaseWidget" category="Layout" groupRefId="Position" groupOrder="2">
+				<StyleElement attribute="@include elemLeft($value)"/>
+				<Description>absolute position measured from left boundary of parent container</Description>
+			</StyleProperty>
+			<StyleProperty name="zIndex" type="UInteger" not_styleable="true" owner="brease.core.BaseWidget" category="Layout" required="true">
+				<StyleElement attribute="z-index"/>
+				<Description>The zIndex property specifies the z-order of a widget and its childs.&lt;br/&gt;
+        When widgets overlap, z-order determines which one covers the other. A widget with a larger zIndex generally covers a widget with a lower one.&lt;br/&gt;
+        The zIndex must be unique within a content.&lt;br/&gt;				</Description>
+			</StyleProperty>
+			<StyleProperty name="minWidth" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="3">
+				<StyleElement attribute="@include elemMinWidth($value)"/>
+				<Description>minimum outer width of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="maxWidth" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="4">
+				<StyleElement attribute="@include elemMaxWidth($value)"/>
+				<Description>maximum outer width of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="minHeight" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="5">
+				<StyleElement attribute="@include elemMinHeight($value)"/>
+				<Description>minimum outer height of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="maxHeight" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="6">
+				<StyleElement attribute="@include elemMaxHeight($value)"/>
+				<Description>maximum outer height of widget</Description>
+			</StyleProperty>
+			<StyleProperty name="borderWidth" category="Appearance" type="PixelValCollection" default="0px">
+				<StyleElement attribute="border-width"/>
+				<Description>border width of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="cornerRadius" category="Appearance" type="PixelValCollection" default="0px">
+				<StyleElement attribute="@include border-radius($value)"/>
+				<Description>corner radius of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="borderStyle" category="Appearance" type="BorderStyle" default="solid">
+				<StyleElement attribute="border-style"/>
+				<Description>border style of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="backColor" category="Appearance" type="Color" default="transparent">
+				<StyleElement selector="&amp;:not(.disabled)" attribute="background-color"/>
+				<Description>background color of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="backGroundGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;:not(.disabled)" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>background of the widget as a gradient</Description>
+			</StyleProperty>
+			<StyleProperty name="thumbColor" category="Appearance" type="Color" default="#FF8800">
+				<StyleElement selector=".borderElement .backgroundElement .thumbBackground:not(.disabled)" attribute="background-color"/>
+				<Description>background color of the slider thumb</Description>
+			</StyleProperty>
+			<StyleProperty name="thumbGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector=".borderElement .thumbBackground:not(.disabled)" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>background of the slider thumb as a gradient</Description>
+			</StyleProperty>
+			<StyleProperty name="borderColor" category="Appearance" type="ColorCollection" default="#C8C8C8">
+				<StyleElement attribute="border-color"/>
+				<Description>border color of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="opacity" category="Appearance" type="Opacity" default="1">
+				<StyleElement attribute="opacity"/>
+				<Description>opacity of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="trackColor" category="Appearance" type="Color" default="#C8C8C8">
+				<StyleElement selector=".borderElement .backgroundElement .rectangleBackground:not(.disabled)" attribute="background-color"/>
+				<Description>background color of the slider line</Description>
+			</StyleProperty>
+			<StyleProperty name="trackGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector=".borderElement .rectangleBackground:not(.disabled)" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>background of the slider line as a gradient</Description>
+			</StyleProperty>
+			<StyleProperty name="fillColor" category="Appearance" type="Color" default="transparent">
+				<StyleElement selector="&amp;:not(.disabled) .borderElement .backgroundElement .fillElement" attribute="background-color"/>
+				<Description>background color of the slider line</Description>
+			</StyleProperty>
+			<StyleProperty name="fillGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;:not(.disabled) .borderElement .backgroundElement .fillElement" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>background of the slider line as a gradient</Description>
+			</StyleProperty>
+			<StyleProperty name="padding" type="Padding" category="Layout" default="10px">
+				<StyleElement attribute="padding"/>
+				<Description>padding of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="margin" category="Layout" type="Margin" default="0px">
+				<StyleElement attribute="margin"/>
+				<Description>margin of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="shadow" type="Shadow" category="Appearance" default="none">
+				<StyleElement attribute="@include box-shadow($value)"/>
+				<Description>shadow of the widget</Description>
+			</StyleProperty>
+			<StyleProperty name="fontSize" category="Font" type="PixelVal" default="10px">
+				<StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="font-size"/>
+				<StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="font-size"/>
+				<StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="font-size"/>
+				<StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="font-size"/>
+				<Description>Fontsize of the text in pixel</Description>
+			</StyleProperty>
+			<StyleProperty name="fontName" category="Font" type="FontName" default="Arial">
+				<StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="font-family"/>
+				<StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="font-family"/>
+				<StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="font-family"/>
+				<StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="font-family"/>
+				<Description>Fontname of the text</Description>
+			</StyleProperty>
+			<StyleProperty name="textColor" category="Appearance" type="Color" default="#000000">
+				<StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="fill"/>
+				<StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="fill"/>
+				<Description>Sets a color of the text on the Scale</Description>
+			</StyleProperty>
+			<StyleProperty name="valueDisplayTextColor" category="Appearance" type="Color" default="#000000">
+				<StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="color"/>
+				<StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="color"/>
+				<Description>Sets a color of the text inside the ValueDisplay</Description>
+			</StyleProperty>
+			<StyleProperty name="valueDisplayBackColor" category="Appearance" type="Color" default="#f1f1f1">
+				<StyleElement selector=".borderElement .valueDisplay" attribute="background-color"/>
+				<StyleElement selector=".borderElement .valueDisplay .arrowOutput" attribute="border-top-color"/>
+				<StyleElement selector=".borderElement .valueDisplay .arrowOutput" attribute="border-left-color"/>
+				<Description>Sets a backColor of the ValueDisplay</Description>
+			</StyleProperty>
+			<StyleProperty name="valueDisplayBackGroundGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector=".borderElement .valueDisplay" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>Sets a backColor of the ValueDisplay</Description>
+			</StyleProperty>
+			<StyleProperty name="ticksColor" category="Appearance" type="Color" default="#000000">
+				<StyleElement selector=".borderElement .axisElement .axis-before .tick line" attribute="stroke"/>
+				<StyleElement selector=".borderElement .axisElement .axis-after .tick line" attribute="stroke"/>
+				<Description>Sets a color of the text on the Scale</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledThumbColor" category="Appearance" type="Color" default="#F1F1F1">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .thumbBackground" attribute="background-color"/>
+				<Description>Sets the color of the thumbColor when the widget is disabled</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledTrackColor" category="Appearance" type="Color" default="#EAEAEA">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .rectangleBackground" attribute="background-color"/>
+				<Description>Sets the color of the trackColor when the widget is disabled</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledThumbGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .thumbBackground" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>Sets the color of the thumbColor when the widget is disabled</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledTrackGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .rectangleBackground" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>Sets the color of the trackGradient when the widget is disabled</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledFillColor" category="Appearance" type="Color" default="transparent">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .fillElement" attribute="background-color"/>
+				<Description>background color of the slider line</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledFillGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;.disabled .borderElement .backgroundElement .fillElement" attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>background of the slider line as a gradient</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledBackColor" category="Appearance" type="Color" default="transparent">
+				<StyleElement selector="&amp;.disabled" attribute="background-color"/>
+				<Description>Sets the background color of the widget when disabled</Description>
+			</StyleProperty>
+			<StyleProperty name="disabledBackGroundGradient" category="Appearance" type="Gradient" default="">
+				<StyleElement selector="&amp;.disabled " attribute="@include backGroundGradient(&apos;$value&apos;)"/>
+				<Description>Sets the color of the background of the widget as a gradient when the widget is disabled</Description>
+			</StyleProperty>
+		</StyleProperties>
+		<PropertyGroups>
+			<PropertyGroup name="Size" type="String" category="Layout">
+				<Description>outer height and width of widget</Description>
+			</PropertyGroup>
+			<PropertyGroup name="Position" type="String" category="Layout">
+				<Description>top and left of widget</Description>
+			</PropertyGroup>
+		</PropertyGroups>
+	<BindingTemplates>
+  
+</BindingTemplates>
+</Widget>
+</WidgetLibrary>

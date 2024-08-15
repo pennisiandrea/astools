@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StyleInformation name="widgets.brease.BasicSlider" xmlns="http://www.br-automation.com/iat2014/widgetStyles"
+									xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+									>
+	<StyleProperties>
+
+    <StyleProperty name="width" type="Size" default="250" category="Layout">
+      <StyleElement attribute="@include elemWidth($value)"></StyleElement>
+      <Description>outer width of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="height" type="Size" default="100" category="Layout">
+      <StyleElement attribute="@include elemHeight($value)"></StyleElement>
+      <Description>outer height of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="minWidth" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="3">
+      <StyleElement attribute="@include elemMinWidth($value)"></StyleElement>
+      <Description>minimum outer width of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="maxWidth" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="4">
+      <StyleElement attribute="@include elemMaxWidth($value)"></StyleElement>
+      <Description>maximum outer width of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="minHeight" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="5">
+      <StyleElement attribute="@include elemMinHeight($value)"></StyleElement>
+      <Description>minimum outer height of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="maxHeight" type="Size" not_styleable="true" default="0" category="Layout" groupRefId="Size" groupOrder="6">
+      <StyleElement attribute="@include elemMaxHeight($value)"></StyleElement>
+      <Description>maximum outer height of widget</Description>
+    </StyleProperty>
+    <StyleProperty name="borderWidth" category="Appearance" type="PixelValCollection" default="0px">
+      <StyleElement attribute="border-width"></StyleElement>
+      <Description>border width of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="cornerRadius" category="Appearance" type="PixelValCollection" default="0px">
+      <StyleElement attribute="@include border-radius($value)"></StyleElement>
+      <Description>corner radius of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="borderStyle" category="Appearance" type="BorderStyle" default="solid">
+      <StyleElement attribute="border-style"></StyleElement>
+      <Description>border style of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="backColor" category="Appearance" type="Color" default="transparent">
+      <StyleElement selector="&amp;:not(.disabled)" attribute="background-color"></StyleElement>
+      <Description>background color of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="backGroundGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector="&amp;:not(.disabled)" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>background of the widget as a gradient</Description>
+    </StyleProperty>
+    <StyleProperty name="thumbColor" category="Appearance" type="Color" default="#FF8800" >
+      <StyleElement selector=".borderElement .backgroundElement .thumbBackground:not(.disabled)" attribute="background-color"></StyleElement>
+      <Description>background color of the slider thumb</Description>
+    </StyleProperty>
+    <StyleProperty name="thumbGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector=".borderElement .thumbBackground:not(.disabled)" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>background of the slider thumb as a gradient</Description>
+    </StyleProperty>
+    <StyleProperty name="borderColor" category="Appearance" type="ColorCollection" default="#C8C8C8" >
+      <StyleElement attribute="border-color"></StyleElement>
+      <Description>border color of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="opacity" category="Appearance" type="Opacity" default="1">
+      <StyleElement attribute="opacity"></StyleElement>
+      <Description>opacity of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="trackColor" category="Appearance" type="Color" default="#C8C8C8">
+      <StyleElement selector=".borderElement .backgroundElement .rectangleBackground:not(.disabled)" attribute="background-color"></StyleElement>
+      <Description>background color of the slider line</Description>
+    </StyleProperty>
+    <StyleProperty name="trackGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector=".borderElement .rectangleBackground:not(.disabled)" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>background of the slider line as a gradient</Description>
+    </StyleProperty>
+    <StyleProperty name="fillColor" category="Appearance" type="Color" default="transparent">
+      <StyleElement selector="&amp;:not(.disabled) .borderElement .backgroundElement .fillElement" attribute="background-color"></StyleElement>
+      <Description>background color of the slider line</Description>
+    </StyleProperty>
+    <StyleProperty name="fillGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector="&amp;:not(.disabled) .borderElement .backgroundElement .fillElement" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>background of the slider line as a gradient</Description>
+    </StyleProperty>
+    <StyleProperty name="padding" type="Padding" category="Layout" default="10px">
+      <StyleElement attribute="padding"></StyleElement>
+      <Description>padding of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="margin" category="Layout" type="Margin" default="0px">
+      <StyleElement attribute="margin"></StyleElement>
+      <Description>margin of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="shadow" type="Shadow" category="Appearance" default="none">
+      <StyleElement attribute="@include box-shadow($value)"></StyleElement>
+      <Description>shadow of the widget</Description>
+    </StyleProperty>
+    <StyleProperty name="fontSize" category="Font" type="PixelVal" default="10px">
+      <StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="font-size"></StyleElement>
+      <StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="font-size"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="font-size"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="font-size"></StyleElement>
+      <Description>
+        Fontsize of the text in pixel
+      </Description>
+    </StyleProperty>
+    <StyleProperty name="fontName" category="Font" type="FontName" default="Arial">
+      <StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="font-family"></StyleElement>
+      <StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="font-family"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="font-family"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="font-family"></StyleElement>
+      <Description>
+        Fontname of the text
+      </Description>
+    </StyleProperty>
+    
+    <!--<StyleProperty name="textShadow" category="Appearance" type="Shadow" default="none">
+      <StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="text-shadow"></StyleElement>
+      <StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="text-shadow"></StyleElement>
+      <Description>
+        Sets a shadow of the text on the Scale
+      </Description>
+    </StyleProperty>-->
+    
+    <!--<StyleProperty name="valueDisplayTextShadow" category="Appearance" type="Shadow" default="none">
+      <StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="text-shadow"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="text-shadow"></StyleElement>
+      <Description>
+        Sets a shadow of the text inside the ValueDisplay
+      </Description>
+    </StyleProperty>-->
+
+    <StyleProperty name="textColor" category="Appearance" type="Color" default="#000000">
+      <StyleElement selector=".borderElement .axisElement .axis-before .tick text" attribute="fill"></StyleElement>
+      <StyleElement selector=".borderElement .axisElement .axis-after .tick text" attribute="fill"></StyleElement>
+      <Description>
+        Sets a color of the text on the Scale
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="valueDisplayTextColor" category="Appearance" type="Color" default="#000000">
+      <StyleElement selector=".borderElement .valueDisplay .valueOutput" attribute="color"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .unitOutput" attribute="color"></StyleElement>
+      <Description>
+        Sets a color of the text inside the ValueDisplay
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="valueDisplayBackColor" category="Appearance" type="Color" default="#f1f1f1">
+      <StyleElement selector=".borderElement .valueDisplay" attribute="background-color"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .arrowOutput" attribute="border-top-color"></StyleElement>
+      <StyleElement selector=".borderElement .valueDisplay .arrowOutput" attribute="border-left-color"></StyleElement>
+      <Description>
+        Sets a backColor of the ValueDisplay
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="valueDisplayBackGroundGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector=".borderElement .valueDisplay" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>
+        Sets a backColor of the ValueDisplay
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="ticksColor" category="Appearance" type="Color" default="#000000">
+      <StyleElement selector=".borderElement .axisElement .axis-before .tick line" attribute="stroke"></StyleElement>
+      <StyleElement selector=".borderElement .axisElement .axis-after .tick line" attribute="stroke"></StyleElement>
+      <Description>
+        Sets a color of the text on the Scale
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="disabledThumbColor" category="Appearance" type="Color" default="#F1F1F1" >
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .thumbBackground" attribute="background-color"></StyleElement>
+      <Description>
+        Sets the color of the thumbColor when the widget is disabled
+      </Description>
+    </StyleProperty>
+
+    <StyleProperty name="disabledTrackColor" category="Appearance" type="Color" default="#EAEAEA" >
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .rectangleBackground" attribute="background-color" ></StyleElement>
+      <Description>
+        Sets the color of the trackColor when the widget is disabled
+      </Description>
+    </StyleProperty>
+    
+    <StyleProperty name="disabledThumbGradient" category="Appearance" type="Gradient" default="" >
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .thumbBackground" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>
+        Sets the color of the thumbColor when the widget is disabled
+      </Description>
+    </StyleProperty>    
+
+    <StyleProperty name="disabledTrackGradient" category="Appearance" type="Gradient" default="" >
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .rectangleBackground" attribute="@include backGroundGradient('$value')" ></StyleElement>
+      <Description>
+        Sets the color of the trackGradient when the widget is disabled
+      </Description>
+    </StyleProperty>
+    
+    <StyleProperty name="disabledFillColor" category="Appearance" type="Color" default="transparent">
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .fillElement" attribute="background-color"></StyleElement>
+      <Description>background color of the slider line</Description>
+    </StyleProperty>
+    
+    <StyleProperty name="disabledFillGradient" category="Appearance" type="Gradient" default="">
+      <StyleElement selector="&amp;.disabled .borderElement .backgroundElement .fillElement" attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>background of the slider line as a gradient</Description>
+    </StyleProperty>
+    
+    <StyleProperty name="disabledBackColor" category="Appearance" type="Color" default="transparent" >
+      <StyleElement selector="&amp;.disabled" attribute="background-color"></StyleElement>
+      <Description>
+        Sets the background color of the widget when disabled
+      </Description>
+    </StyleProperty>
+    
+     <StyleProperty name="disabledBackGroundGradient" category="Appearance" type="Gradient" default="" >
+      <StyleElement selector="&amp;.disabled " attribute="@include backGroundGradient('$value')"></StyleElement>
+      <Description>
+        Sets the color of the background of the widget as a gradient when the widget is disabled
+      </Description>
+    </StyleProperty>
+    
+  </StyleProperties>
+</StyleInformation>

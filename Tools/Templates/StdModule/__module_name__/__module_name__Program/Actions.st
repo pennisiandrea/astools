@@ -8,13 +8,13 @@ END_ACTION
 
 ACTION ResetOutputsAction: 
 
-    memset(ADR(g__module_name__.Interface.Outputs),0,SIZEOF(g__module_name__.Interface.Outputs));
+    brsmemset(ADR(g__module_name__.Interface.Outputs),0,SIZEOF(g__module_name__.Interface.Outputs));
 
 END_ACTION
 
 ACTION ResetFeedbacksAction: 
 
-    memset(ADR(g__module_name__.Feedbacks),0,SIZEOF(g__module_name__.Feedbacks));
+    brsmemset(ADR(g__module_name__.Feedbacks),0,SIZEOF(g__module_name__.Feedbacks));
 
 END_ACTION
 

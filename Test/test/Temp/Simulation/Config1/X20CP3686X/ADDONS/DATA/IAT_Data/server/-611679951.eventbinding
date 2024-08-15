@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EventBindingDefinition xmlns="http://www.br-automation.com/iat2014/eventbinding/runtime/v2">
+  <Content id="content_1">
+    <EventBinding id="content_1.Button1.Click">
+      <Source type="widgets.brease.Button.Event" event="Click" refId="content_1_Button1" />
+      <EventHandler>
+        <Action>
+          <Target type="clientSystem.Action">
+            <Method type="clientSystem.Action.ChangeTheme"><Parameter name="theme" xsi:type="ANY_STRING" value="BuRTheme1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" /></Method>
+          </Target>
+        </Action>
+      </EventHandler>
+    </EventBinding>
+  </Content>
+  <Content id="content_1">
+    <EventBinding id="content_1.Button2.Click">
+      <Source type="widgets.brease.Button.Event" event="Click" refId="content_1_Button2" />
+      <EventHandler>
+        <Action>
+          <Target type="clientSystem.Action">
+            <Method type="clientSystem.Action.ChangeTheme"><Parameter name="theme" xsi:type="ANY_STRING" value="BuRThemeFlat2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" /></Method>
+          </Target>
+        </Action>
+      </EventHandler>
+    </EventBinding>
+  </Content>
+  <Content id="content_1">
+    <EventBinding id="content_1.Button3.Click">
+      <Source type="widgets.brease.Button.Event" event="Click" refId="content_1_Button3" />
+      <EventHandler>
+        <Action>
+          <Target type="clientSystem.Action">
+            <Method type="clientSystem.Action.ChangeTheme"><Parameter name="theme" xsi:type="ANY_STRING" value="BuRThemeMobileGray" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" /></Method>
+          </Target>
+        </Action>
+      </EventHandler>
+    </EventBinding>
+  </Content>
+</EventBindingDefinition>

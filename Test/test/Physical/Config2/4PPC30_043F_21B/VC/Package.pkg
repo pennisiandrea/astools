@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Package xmlns="http://br-automation.co.at/AS/Package">
+  <Objects>
+    <Object Type="File" Description="Key mapping for 4PPC30.043F-21B">4PPC30_043F_21B.dis</Object>
+  </Objects>
+</Package>

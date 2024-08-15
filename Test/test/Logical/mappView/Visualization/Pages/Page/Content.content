@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Content id="content_1" height="600" width="800" xmlns="http://www.br-automation.com/iat2015/contentDefinition/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Widgets>
+    <Widget xsi:type="widgets.brease.Button" id="Button1" top="155" left="100" zIndex="0" text="Tema1" />
+    <Widget xsi:type="widgets.brease.DateTimeOutput" id="DateTimeOutput1" top="95" left="100" width="350" zIndex="1" />
+    <Widget xsi:type="widgets.brease.BasicSlider" id="BasicSlider1" top="200" left="90" zIndex="2" />
+    <Widget xsi:type="widgets.brease.Button" id="Button2" top="155" left="240" zIndex="3" text="Tema2" />
+    <Widget xsi:type="widgets.brease.Button" id="Button3" top="155" left="380" zIndex="4" text="Tema3" />
+  </Widgets>
+</Content>

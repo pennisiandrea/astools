@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Configuration>
+  <Element ID="Minimum calculated safety runtime." Type="fbpw">
+    <Group ID="Row[0]">
+      <Property ID="Position" Value="$root" />
+      <Property ID="Module" Value="X20CP3686X" />
+      <Property ID="BusGroup" Value="" />
+      <Property ID="PSadditional" Value="" />
+      <Property ID="PCadditional" Value="" />
+      <Property ID="IOGroup" Value="1" />
+      <Property ID="PSgeneral" Value="240.00" />
+      <Property ID="PCgeneral" Value="0.10" />
+      <Property ID="IOPowerEx" Value="0.10" />
+      <Property ID="RowColor" Value="White" />
+    </Group>
+    <Group ID="Row[1]">
+      <Property ID="Position" Value="SS1" />
+      <Property ID="Module" Value="X20IF1082-2" />
+      <Property ID="BusGroup" Value="" />
+      <Property ID="PSadditional" Value="" />
+      <Property ID="PCadditional" Value="2.00" />
+      <Property ID="IOGroup" Value="1" />
+      <Property ID="PSgeneral" Value="" />
+      <Property ID="PCgeneral" Value="" />
+      <Property ID="IOPowerEx" Value="0.00" />
+      <Property ID="RowColor" Value="LightGray" />
+    </Group>
+    <Group ID="Row[2]">
+      <Property ID="Position" Value="" />
+      <Property ID="Module" Value="" />
+      <Property ID="BusGroup" Value="∑" />
+      <Property ID="PSadditional" Value="" />
+      <Property ID="PCadditional" Value="2.00" />
+      <Property ID="IOGroup" Value="∑" />
+      <Property ID="PSgeneral" Value="240.00" />
+      <Property ID="PCgeneral" Value="0.10" />
+      <Property ID="IOPowerEx" Value="" />
+      <Property ID="RowColor" Value="White" />
+    </Group>
+  </Element>
+</Configuration>
