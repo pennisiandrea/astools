@@ -10,4 +10,9 @@
   <ItemGroup>
     <Compile Remove="C:\Data\astools\ASTools\Tools\Module\Module.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="ConsoleTables" Version="2.6.1" />
+  </ItemGroup>
 </Project>

@@ -8,5 +8,11 @@
     <Object Type="Program" Language="IEC">Program</Object>
     <Object Type="Package">mappView</Object>
     <Object Type="Package">prgTest</Object>
+    <Object Type="Package">Andrea</Object>
+    <Object Type="Package">Giovanni</Object>
+    <Object Type="Package">Erica</Object>
+    <Object Type="Package">mannaggia</Object>
+    <Object Type="Package">Tommaso</Object>
+    <Object Type="Package">Maria</Object>
   </Objects>
 </Package>

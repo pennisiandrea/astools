@@ -11,5 +11,7 @@
     <Object Type="Package">FB2</Object>
     <Object Type="Package">FB3</Object>
     <Object Type="File">FB3Types.typ</Object>
+    <Object Type="Package">FB4</Object>
+    <Object Type="File">FB4Types.typ</Object>
   </Objects>
 </Library>
