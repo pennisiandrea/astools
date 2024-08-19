@@ -89,7 +89,7 @@ namespace ASTools.UI
             ThisApp.astoolsProcess.StandardOutput.DiscardBufferedData();
 
             // Send command
-            ThisApp.astoolsInputInterface.WriteLine("templates --ui --templates-list");
+            ThisApp.astoolsInputInterface.WriteLine("templates --ui --list");
 
             // Read process output
             bool exit = false;
@@ -118,7 +118,7 @@ namespace ASTools.UI
             ThisApp.astoolsProcess.StandardOutput.DiscardBufferedData();
 
             // Send command
-            ThisApp.astoolsInputInterface.WriteLine($"templates --ui --keywords-list --selected-template {templatePath}");
+            ThisApp.astoolsInputInterface.WriteLine($"templates --ui --selected {templatePath} --k-list");
 
             // Read process output
             bool exit = false;
@@ -170,6 +170,10 @@ namespace ASTools.UI
             executeButton.IsEnabled = KeywordsList.All(_ => _.Value != null && _.Value != string.Empty);
         }
         private void ExecuteButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Pulsante cliccato!");
+        }
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Pulsante cliccato!");
         }

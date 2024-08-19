@@ -137,11 +137,11 @@ namespace ASTools.Core.Tools.Templates
 
         }
         
-        public List<TemplateListItem> UpdateTemplatesList(string[] templatesPath)
+        public List<TemplateListItem> UpdateTemplatesList(string[] repositories)
         {
             _templatesList.Clear();
             int id = 0;
-            foreach (var path in templatesPath)
+            foreach (var path in repositories)
             {
                 if (!Directory.Exists(path)) throw new Exception($"Templates path {path} invalid");
                 DirectoryInfo dir = new(path);

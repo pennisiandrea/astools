@@ -23,7 +23,7 @@ public partial class App : Application
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = false
+            CreateNoWindow = true
         };
 
         astoolsProcess = Process.Start(startInfo);  
