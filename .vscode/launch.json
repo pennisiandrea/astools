@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch ASTools.Core",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build ASTools.Core",
+            "program": "${workspaceFolder}/ASTools.Core/bin/Debug/net8.0/ASTools.Core.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/ASTools.Core",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "launchBrowser": {
+                "enabled": false
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": ".NET Core Launch ASTools.UI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build ASTools.UI",
+            "program": "${workspaceFolder}/ASTools.UI/bin/Debug/net8.0-windows/ASTools.UI.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/ASTools.UI",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "launchBrowser": {
+                "enabled": false
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}

@@ -177,15 +177,17 @@ namespace ASTools.Core.Tools.Templates
         private const string DefaultTemplateConfigFile = "template_config.xml";
         // Constructor
         public Template(string templatePath)
-        {           
-            _config = GetConfig(templatePath);
-            _templatePath = templatePath;
+        {         
+            Init(templatePath);  
+            if (_config == null) throw new Exception($"Invalid configuration"); 
+            if (_templatePath == null) throw new Exception($"Invalid template"); 
         }
 
         // Methods
         public void Init (string templatePath)
         {
             _config = GetConfig(templatePath);
+            _templatePath = templatePath;
         }
         public void Execute(string userPath)
         {

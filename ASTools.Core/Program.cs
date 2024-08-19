@@ -80,6 +80,7 @@ namespace ASTools.Core
     }
     class Program
     {
+        private const string EndOfCommandUI = ""; // The empty line is enough
         private static Templates? _templates;
         private static Template? _template;
 
@@ -111,7 +112,11 @@ namespace ASTools.Core
                         newCmd = Console.ReadLine();
                     } while (newCmd == null);
 
-                    listNewCmd = newCmd.Split(' ').ToList().Select(_ => _.Trim('\"')).ToList();  
+                    listNewCmd = newCmd.Split(' ')
+                        .ToList()
+                        .Select(_ => _.Trim('\"'))
+                        .Select(_ => _.Replace("\\\\","\\"))
+                        .ToList();  
                 }
             }  
         }
@@ -263,7 +268,8 @@ namespace ASTools.Core
             if (opts.TemplatesList) TemplatesUICommandTemplatesList();   
             else if (opts.Exec) TemplatesUICommandExec(opts);    
             else if (opts.KeywordsList) TemplatesUICommandKeywordsList(opts.SelectedTemplate); 
-            else if (opts.KeywordInsert) TemplatesUICommandKeywordInsert(opts);  
+            else if (opts.KeywordInsert) TemplatesUICommandKeywordInsert(opts);      
+            Console.WriteLine(EndOfCommandUI);            
         }
         static void TemplatesUICommandTemplatesList()
         {
@@ -272,7 +278,7 @@ namespace ASTools.Core
             string[] templatesPath = TemplatesRetrieveTemplatesDirFromRegistry();
             
             _templates.UpdateTemplatesList(templatesPath);
-            TemplatesUIWriteTemplatesList(_templates.TemplatesList);                
+            TemplatesUIWriteTemplatesList(_templates.TemplatesList);      
         }
         static void TemplatesUIWriteTemplatesList(List<Templates.TemplateListItem> list)
         {
@@ -290,7 +296,7 @@ namespace ASTools.Core
             if (!_template.KeywordsReady) throw new Exception($"{opts.SelectedTemplate} template not ready");
             if (opts.ExecWorkingDir == null) throw new Exception($"No working path provided");
 
-            _template.Execute(opts.ExecWorkingDir);            
+            _template.Execute(opts.ExecWorkingDir);                  
         }
         static void TemplatesUICommandKeywordsList(string? templatePath)
         {
@@ -298,7 +304,7 @@ namespace ASTools.Core
             if (_template == null) _template = new(templatePath);
             else if (_template.TemplatePath != templatePath) _template.Init(templatePath);
             
-            TemplatesUIWriteKeywordsList(_template.Config.Keywords);                
+            TemplatesUIWriteKeywordsList(_template.Config.Keywords);                           
         }
         static void TemplatesUIWriteKeywordsList(List<TemplateConfigClass.KeywordClass>? list)
         {
