@@ -116,32 +116,29 @@ namespace ASTools.Core.Tools.Templates
 
     public class Templates
     {     
-        public class TemplateListItem
+        public class TemplateListItem(int id, string path, string name)
         {
-            public int ID;
-            public string Path;
-            public string Name;
-
-            public TemplateListItem(int id, string path, string name)
-            {
-                ID = id;
-                Path = path;
-                Name = name;
-            }            
+            public int ID = id;
+            public string Path = path;
+            public string Name = name;
         }
-        private List<TemplateListItem> _templatesList = new();
+        private readonly List<TemplateListItem> _templatesList = [];
         public List<TemplateListItem> TemplatesList { get => _templatesList;}
+        private readonly List<string> _repositories = [];
+        public List<string> Repositories { get => _repositories; }
+        private readonly string _configFilePath;
 
-        public Templates()
+        public Templates(string configFilePath)
         {            
-
+            _configFilePath = configFilePath;
+            GetConfigParameters();
         }
         
-        public List<TemplateListItem> UpdateTemplatesList(string[] repositories)
+        public List<TemplateListItem> UpdateTemplatesList()
         {
             _templatesList.Clear();
             int id = 0;
-            foreach (var path in repositories)
+            foreach (var path in _repositories)
             {
                 if (!Directory.Exists(path)) throw new Exception($"Templates path {path} invalid");
                 DirectoryInfo dir = new(path);
@@ -152,13 +149,76 @@ namespace ASTools.Core.Tools.Templates
                         
             return TemplatesList;
         }
-    
+
+        public void AddRepository (string repository)
+        {
+            if (!_repositories.Contains(repository) && Directory.Exists(repository))
+            {
+                var iniFile = new IniFile(_configFilePath);
+
+                for (int i = 1; ; i++)
+                {
+                    string tmprepository = iniFile.Read("Templates", $"Repository{i}");
+                    if (string.IsNullOrEmpty(tmprepository))
+                    {
+                        iniFile.Write("Templates", $"Repository{i}",repository);
+                        break;
+                    }
+                }
+                GetConfigParameters();
+                UpdateTemplatesList();
+            }
+        }
+        public void RemoveRepository (string repository)
+        {            
+            if (_repositories.Contains(repository))
+            {
+                var iniFile = new IniFile(_configFilePath);
+                var shift = false;
+                for (int i = 1; ; i++)
+                {
+                    string actRepository = iniFile.Read("Templates", $"Repository{i}");
+
+                    if (shift)
+                    {    
+                        if (string.IsNullOrEmpty(actRepository)) {
+                            iniFile.DeleteKey("Templates", $"Repository{i-1}");
+                            break;    
+                        }   
+                        else
+                        {
+                            iniFile.Write("Templates", $"Repository{i-1}",actRepository);
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(actRepository)) break;
+                    else if (actRepository == repository) shift = true;    
+                }
+                GetConfigParameters();
+                UpdateTemplatesList();
+            }
+        }
+        private void GetConfigParameters()
+        {
+            _repositories.Clear();
+
+            var iniFile = new IniFile(_configFilePath);
+
+            for (int i = 1; ; i++)
+            {
+                string repository = iniFile.Read("Templates", $"Repository{i}");
+                if (string.IsNullOrEmpty(repository))
+                    break;
+                
+                if (!_repositories.Contains(repository) && Directory.Exists(repository)) _repositories.Add(repository);
+            }
+        }
     }
 
     public class Template
     {   
         // Fields
-        private Dictionary<string,string> _configConstants = new ()
+        private readonly Dictionary<string,string> _configConstants = new ()
         {
             {"$CONFIG_FILE_NAME",string.Empty},
             {"$TEMPLATE_PATH",string.Empty},
@@ -285,22 +345,17 @@ namespace ASTools.Core.Tools.Templates
             }
              
         }
-        private TemplateConfigClass GetConfig(string templatePath)
+        private static TemplateConfigClass GetConfig(string templatePath)
         {
             string configFileFullName = Path.Combine(templatePath,DefaultTemplateConfigFile);
             if (!File.Exists(configFileFullName)) throw new Exception($"{configFileFullName} file not found!");
             
-            XmlSerializer serializer = new XmlSerializer(typeof(TemplateConfigClass));
+            XmlSerializer serializer = new(typeof(TemplateConfigClass));
 
-            using (FileStream fileStream = new FileStream(configFileFullName, FileMode.Open))
-            {
-                var tempConfig = (TemplateConfigClass?)serializer.Deserialize(fileStream);
-
-                if (tempConfig == null) throw new Exception($"Failed to deserialize {configFileFullName}");
-
-                return tempConfig;
-            }
-
+            using FileStream fileStream = new(configFileFullName, FileMode.Open);
+            var tempConfig = (TemplateConfigClass?)serializer.Deserialize(fileStream) ?? throw new Exception($"Failed to deserialize {configFileFullName}");
+            
+            return tempConfig;
         }
         private string ReplaceConstants(string str)
         {
@@ -314,7 +369,7 @@ namespace ASTools.Core.Tools.Templates
 
             if (File.Exists(destPath)) // Provided path is just a file
             {
-                FileInfo destFile = new FileInfo(destPath);
+                FileInfo destFile = new(destPath);
                 string newfileName = destFile.FullName;
                 
                 // Replace keywords in the file name
@@ -331,7 +386,7 @@ namespace ASTools.Core.Tools.Templates
             }
             else if(Directory.Exists(destPath)) // Provided path is a folder
             {
-                DirectoryInfo destDir = new DirectoryInfo(destPath);
+                DirectoryInfo destDir = new(destPath);
 
                 // Check if destDir name contains a keyword
                 if (replacementsList.Any(_ => _.ID == destDir.Name))
@@ -374,14 +429,14 @@ namespace ASTools.Core.Tools.Templates
 
             if (File.Exists(sourcePath)) // Copying a single file
             {
-                FileInfo file = new FileInfo(sourcePath);
+                FileInfo file = new(sourcePath);
                 copiedPath = Path.Combine(destPath,file.Name);
                 file.CopyTo(copiedPath);
             }
             else if (Directory.Exists(sourcePath)) // Copying a folder
             {                
-                DirectoryInfo sourceDir = new DirectoryInfo(sourcePath);
-                DirectoryInfo destDir = new DirectoryInfo(destPath);
+                DirectoryInfo sourceDir = new(sourcePath);
+                DirectoryInfo destDir = new(destPath);
 
                 // Check if in destPath exists a directory like sourcePath. This sould be true only the first time
                 if (sourceDir.Name != destDir.Name)
@@ -436,11 +491,11 @@ namespace ASTools.Core.Tools.Templates
             if (!File.Exists(lastUserFile)) throw new Exception($"Cannot find file {lastUserFile}");
 
             // Carica il documento XML dal file
-            XmlDocument xmlDoc = new XmlDocument();
+            XmlDocument xmlDoc = new();
             xmlDoc.Load(lastUserFile);
 
             // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
             if (xmlDoc.DocumentElement != null)
             {
                 string namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
@@ -462,11 +517,11 @@ namespace ASTools.Core.Tools.Templates
         {
             // Carica il documento XML dal file
             string activeConfigFile = Path.Combine(projectPath,"Physical",activeConfigName,"Config.pkg");
-            XmlDocument xmlDoc = new XmlDocument();
+            XmlDocument xmlDoc = new();
             xmlDoc.Load(activeConfigFile);
 
             // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
             if (xmlDoc.DocumentElement != null)
             {
                 string namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
@@ -506,11 +561,11 @@ namespace ASTools.Core.Tools.Templates
         private static void AddXmlElementsToFile(XmlElement[] elements, string xmlPath, string filePath)
         {
             // Carica il documento XML dal file
-            XmlDocument xmlDoc = new XmlDocument();
+            XmlDocument xmlDoc = new();
             xmlDoc.Load(filePath);
 
             // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
             string namespaceUri = "";
             if (xmlDoc.DocumentElement != null)
             {
@@ -544,8 +599,7 @@ namespace ASTools.Core.Tools.Templates
         private static void AddDescriptiveXmlElement(string addedItemPath, string type)
         {      
             // Get DescriptiveFile
-            string? descriptiveDirName = Path.GetDirectoryName(addedItemPath);
-            if (descriptiveDirName == null) throw new Exception($"Cannot find {addedItemPath} folder");
+            string? descriptiveDirName = Path.GetDirectoryName(addedItemPath) ?? throw new Exception($"Cannot find {addedItemPath} folder");
             FileInfo descriptiveFile = GetASDescriptiveFile(descriptiveDirName);    
 
             // Get ItemName
@@ -573,7 +627,7 @@ namespace ASTools.Core.Tools.Templates
         }
         private static XmlElement GetDescriptiveXmlElement(string type, string name)
         {
-            XmlDocument xmlDoc = new XmlDocument();
+            XmlDocument xmlDoc = new();
 
             string? xmlString = null;
 

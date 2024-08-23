@@ -1,0 +1,89 @@
+﻿<Page x:Class="ASTools.UI.TemplatesPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TemplatesPage"
+        Loaded="Window_Loaded">   
+    <Page.Resources>
+         
+        <Style TargetType="DataGridCell">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Orange"/> 
+                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="BorderBrush" Value="Black"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <!-- Settings Button -->
+        <Button Name="settingsButton"
+                Grid.Row="0"
+                Content="Settings"
+                HorizontalAlignment="Right"
+                Margin="10"
+                IsEnabled="True"
+                Click="SettingsButton_Click" />
+
+        <Button Name="homeButton"
+                Grid.Row="0"
+                Content="Home"
+                HorizontalAlignment="left"
+                Margin="10"
+                IsEnabled="True"
+                Click="HomeButton_Click" />
+
+        <!-- Templates list -->
+        <DataGrid Name="templatesListGrid"
+                  Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionChanged="TemplatesListGrid_SelectionChanged"
+                  Loaded="TemplatesListGrid_Loaded">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Path" Width="2*" Binding="{Binding Path}" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Keywords list -->
+        <DataGrid Name="keywordsListGrid"
+                  Grid.Row="2"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Keyword" Width="*" Binding="{Binding Keyword}" IsReadOnly="True" />
+                <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}" />
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
+            
+            <!-- Working directory -->
+            <TextBox    Name="workingDirectoryTextBox"
+                        Margin="10"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Stretch"/>
+
+            <!-- Execute Button -->
+            <Button Name="executeButton"
+                    Content="Execute"
+                    HorizontalAlignment="Right"
+                    Margin="10"
+                    IsEnabled="False"
+                    Click="ExecuteButton_Click" />
+        </StackPanel>
+    </Grid>
+</Page>

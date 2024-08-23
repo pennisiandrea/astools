@@ -25,7 +25,7 @@
             "request": "launch",
             "preLaunchTask": "Build ASTools.UI",
             "program": "${workspaceFolder}/ASTools.UI/bin/Debug/net8.0-windows/ASTools.UI.dll",
-            "args": [],
+            "args": ["--page","templates"],
             "cwd": "${workspaceFolder}/ASTools.UI",
             "stopAtEntry": false,
             "console": "internalConsole",

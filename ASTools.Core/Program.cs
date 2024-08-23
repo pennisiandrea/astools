@@ -4,6 +4,8 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using ConsoleTables;
 using System.Security.Principal;
+using System;
+using System.Text;
 
 namespace ASTools.Core
 {
@@ -82,25 +84,69 @@ namespace ASTools.Core
         public class Exit
         { }
     }
+    class IniFile(string path)
+    {
+        public string Path { get; } = path;
+
+        // Metodo per scrivere una chiave in una sezione
+        public void Write(string section, string? key, string? value)
+        {
+            _ = WritePrivateProfileString(section, key, value, Path);
+        }
+
+        // Metodo per leggere una chiave da una sezione
+        public string Read(string section, string key)
+        {
+            var retVal = new StringBuilder(255);
+            _ = GetPrivateProfileString(section, key, "", retVal, 255, Path);
+            return retVal.ToString();
+        }
+
+        // Metodo per cancellare una chiave da una sezione
+        public void DeleteKey(string section, string key)
+        {
+            Write(section, key, null);
+        }
+
+        // Metodo per cancellare una sezione
+        public void DeleteSection(string section)
+        {
+            Write(section, null, null);
+        }
+
+        // Metodo per verificare se una chiave esiste in una sezione
+        public bool KeyExists(string section, string key)
+        {
+            return Read(section, key).Length > 0;
+        }
+
+        // Funzioni esterne
+        [DllImport("kernel32", CharSet = CharSet.Unicode)]
+        private static extern int GetPrivateProfileString(string section, string key, string defaultValue, StringBuilder retVal, int size, string filePath);
+
+        [DllImport("kernel32", CharSet = CharSet.Unicode)]
+        private static extern long WritePrivateProfileString(string section, string? key, string? value, string filePath);
+    }
+
     class Program
     {
-        private const string TemplatesRepositoriesListRegistryPath = "SOFTWARE\\ASTools\\ASTemplates\\";
-        private const string TemplatesRepositoriesListRegistryKey = "Repositories";
+        private const string InstallPathRegistryPath = "SOFTWARE\\ASTools\\";
+        private const string InstallPathRegistryKey = "InstallPath";
+        private const string ConfigFileName = "Config.ini";
         private const string EndOfCommandUI = ""; // The empty line is enough
-        private const string ErrorToUI = "ERROR";
         private static Templates? _templates;
         private static Template? _template;
-        private static bool _runAsAdministrator; 
+        private static readonly string _configFilePath;
+
+        static Program()
+        {
+            _configFilePath = Path.Combine(GetConfigFilePath(),ConfigFileName);
+        }
 
         static void Main(string[] argv)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program be executed only on windows.");
             #pragma warning disable CA1416 // Validate platform compatibility
-
-            // Check is this program was executed by an administrator
-            WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new(identity);
-            _runAsAdministrator = principal.IsInRole(WindowsBuiltInRole.Administrator);
 
             // Runtime
             string? newCmd = null;
@@ -133,11 +179,27 @@ namespace ASTools.Core
                 }
             }  
         }
+        
+        // General
         private static void HandleParseError(IEnumerable<Error> errors)
         {
             if (errors != null){
                 // todo
             };
+        }
+        private static string GetConfigFilePath()
+        {
+            string? configFilePath = null;
+            RegistryKey? key = Registry.LocalMachine.OpenSubKey(InstallPathRegistryPath);
+            if (key != null)
+            {
+                var keyValue = key.GetValue(InstallPathRegistryKey);
+                if (keyValue == null || keyValue is not string) 
+                    throw new Exception($"Invalid value on registry key {InstallPathRegistryPath}\\{InstallPathRegistryKey}");
+                configFilePath = (string)keyValue;
+            }
+            if (configFilePath == null) throw new Exception($"Cannot retrieve configFilePath {InstallPathRegistryPath}\\{InstallPathRegistryPath}");
+            return configFilePath;
         }
 
         // Templates - General
@@ -158,21 +220,18 @@ namespace ASTools.Core
             if (opts == null) throw new Exception($"Invalid options combination");
 
         }
-        static string[] TemplatesRetrieveTemplatesRepoFromRegistry()
+        static void TemplatesCommandRepositoryAdd(string repository)
         {
-            string[] repositories = [];
-            RegistryKey? key = Registry.LocalMachine.OpenSubKey(TemplatesRepositoriesListRegistryPath);
-            if (key != null)
-            {
-                var keyValue = key.GetValue(TemplatesRepositoriesListRegistryKey);
-                if (keyValue == null || keyValue is not string[]) 
-                    throw new Exception($"Invalid value on registry key {TemplatesRepositoriesListRegistryPath}\\{TemplatesRepositoriesListRegistryKey}");
-                repositories = (string[])keyValue;
-            }
-
-            return repositories;
+            _templates ??= new(_configFilePath);
+            
+            _templates.AddRepository(repository); 
         }
-        
+        static void TemplatesCommandRepositoryRemove(string repository)
+        {
+            _templates ??= new(_configFilePath);
+            _templates.RemoveRepository(repository);  
+        }
+
         // Templates - Console
         static void TemplatesConsoleCommands(Command.Templates opts)
         {
@@ -182,18 +241,17 @@ namespace ASTools.Core
             else if (opts.KeywordsList) TemplatesConsoleCommandKeywordsList(opts.SelectedTemplate);  
             else if (opts.KeywordInsertName != null) TemplatesConsoleCommandKeywordInsert(opts); 
             else if (opts.RepositoriesList) TemplatesConsoleCommandRepositoriesList(); 
-            else if (opts.RepositoryAdd != null) TemplatesConsoleCommandRepositoryAdd(opts.RepositoryAdd); 
-            else if (opts.RepositoryRemove != null) TemplatesConsoleCommandRepositoryRemove(opts.RepositoryRemove); 
+            else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
+            else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 
             else Console.WriteLine("No command provided");       
         }
         static void TemplatesConsoleCommandTemplatesList()
         {
-            if (_templates == null) _templates = new();
+            _templates ??= new(_configFilePath);
 
-            string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
+            _templates.UpdateTemplatesList();
             
-            _templates.UpdateTemplatesList(repositories);
-            TemplatesConsoleWriteTemplatesList(_templates.TemplatesList);                
+            TemplatesConsoleWriteTemplatesList(_templates.TemplatesList);              
         }
         static void TemplatesConsoleWriteTemplatesList(List<Templates.TemplateListItem> list)
         {
@@ -203,33 +261,26 @@ namespace ASTools.Core
                 foreach (var template in list)
                     table.AddRow(template.ID,template.Name,template.Path);                     
 
-            table.Write(Format.Minimal);
+            table.Write(Format.Minimal); 
         }
         static void TemplatesConsoleCommandRepositoriesList()
         {
-            string[] templatesPath = TemplatesRetrieveTemplatesRepoFromRegistry();
-            
-            TemplatesConsoleWriteRepositoriesList(templatesPath);                
-        }
-        static void TemplatesConsoleWriteRepositoriesList(string[] list)
-        {
+            _templates ??= new(_configFilePath);  
             var table = new ConsoleTable("Path");
             
-            if (list != null)
-                foreach (var repository in list)
+            if (_templates.Repositories != null)
+                foreach (var repository in _templates.Repositories)
                     table.AddRow(repository);                     
 
-            table.Write(Format.Minimal);
+            table.Write(Format.Minimal);              
         }
         static void TemplatesConsoleCommandExec(Command.Templates opts)
         {
-            if (_templates == null) _templates = new();
-
-            string[] templatesPath = TemplatesRetrieveTemplatesRepoFromRegistry();
+            _templates ??= new(_configFilePath);
 
             if (opts.SelectedTemplate == null) // Ask user to select a template
             {
-                _templates.UpdateTemplatesList(templatesPath);
+                _templates.UpdateTemplatesList();
 
                 TemplatesConsoleWriteTemplatesList(_templates.TemplatesList);
 
@@ -272,17 +323,13 @@ namespace ASTools.Core
             if (_template == null) _template = new(templatePath);
             else if (_template.TemplatePath != templatePath) _template.Init(templatePath);
             
-            TemplatesConsoleWriteKeywordsList(_template.Config.Keywords);                
-        }
-        static void TemplatesConsoleWriteKeywordsList(List<TemplateConfigClass.KeywordClass>? list)
-        {
             var table = new ConsoleTable("ID", "Value");
             
-            if (list != null)
-                foreach (var keyword in list)
+            if (_template.Config.Keywords != null)
+                foreach (var keyword in _template.Config.Keywords)
                     table.AddRow(keyword.ID,keyword.Value);                     
 
-            table.Write(Format.Minimal);
+            table.Write(Format.Minimal);              
         }
         static void TemplatesConsoleCommandKeywordInsert(Command.Templates opts)
         {
@@ -294,45 +341,7 @@ namespace ASTools.Core
                                                        
             _template.SetKeywordValue(new TemplateConfigClass.KeywordClass(){ID = opts.KeywordInsertName,Value = opts.KeywordInsertValue});               
         }
-        static void TemplatesConsoleCommandRepositoryAdd(string repository)
-        {
-            if (_templates == null) _templates = new();
-            if (!_runAsAdministrator) Console.WriteLine("To execute this command you have to execute the program as Administrator");
-            else
-            {
-                string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
-
-                if (!repositories.Contains(repository))
-                {
-                    string[] newRepositories = [.. repositories, repository];
-                        
-                    RegistryKey? key = Registry.LocalMachine.OpenSubKey(TemplatesRepositoriesListRegistryPath, writable: true);
-                    if (key != null) key.SetValue(TemplatesRepositoriesListRegistryKey,newRepositories,RegistryValueKind.MultiString);
-                    
-                    _templates.UpdateTemplatesList(repositories);  
-                }     
-            }   
-        }
-        static void TemplatesConsoleCommandRepositoryRemove(string repository)
-        {
-            if (_templates == null) _templates = new();
-            if (!_runAsAdministrator) Console.WriteLine("To execute this command you have to execute the program as Administrator");
-            else
-            {
-                string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
-
-                if (repositories.Contains(repository))
-                {
-                    string[] newRepositories = repositories.Where(_ => _ != repository).ToArray();
-
-                    RegistryKey? key = Registry.LocalMachine.OpenSubKey(TemplatesRepositoriesListRegistryPath, writable: true);
-                    if (key != null) key.SetValue(TemplatesRepositoriesListRegistryKey,newRepositories,RegistryValueKind.MultiString);
-                    
-                    _templates.UpdateTemplatesList(repositories);  
-                }    
-            }    
-        }
-
+        
         // Templates - UI
         static void TemplatesUICommands(Command.Templates opts)
         {
@@ -342,36 +351,26 @@ namespace ASTools.Core
             else if (opts.KeywordsList) TemplatesUICommandKeywordsList(opts.SelectedTemplate); 
             else if (opts.KeywordInsertName != null) TemplatesUICommandKeywordInsert(opts);   
             else if (opts.RepositoriesList) TemplatesUICommandRepositoriesList();    
-            else if (opts.RepositoryAdd != null) TemplatesUICommandRepositoryAdd(opts.RepositoryAdd); 
-            else if (opts.RepositoryRemove != null) TemplatesUICommandRepositoryRemove(opts.RepositoryRemove); 
+            else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
+            else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 
             Console.WriteLine(EndOfCommandUI);            
         }
         static void TemplatesUICommandTemplatesList()
         {
-            if (_templates == null) _templates = new();
+            _templates ??= new(_configFilePath);
 
-            string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
+            _templates.UpdateTemplatesList();
             
-            _templates.UpdateTemplatesList(repositories);
-            TemplatesUIWriteTemplatesList(_templates.TemplatesList);      
-        }
-        static void TemplatesUIWriteTemplatesList(List<Templates.TemplateListItem> list)
-        {
-            if (list != null)
-                foreach (var template in list)
+            if (_templates.TemplatesList != null)
+                foreach (var template in _templates.TemplatesList)
                     Console.WriteLine($"{template.ID}|{template.Name}|{template.Path}");     
         }
         static void TemplatesUICommandRepositoriesList()
         {
-            string[] templatesPath = TemplatesRetrieveTemplatesRepoFromRegistry();
+            _templates ??= new(_configFilePath);  
             
-            TemplatesUIWriteRepositoriesList(templatesPath);      
-        }
-        static void TemplatesUIWriteRepositoriesList(string[] list)
-        {
-            if (list != null)
-                foreach (var repository in list)
-                    Console.WriteLine(repository);     
+            foreach (var repository in _templates.Repositories)
+                Console.WriteLine(repository);  
         }
         static void TemplatesUICommandExec(Command.Templates opts)
         {
@@ -390,14 +389,10 @@ namespace ASTools.Core
             if (templatePath == null) throw new Exception($"No template path provided");
             if (_template == null) _template = new(templatePath);
             else if (_template.TemplatePath != templatePath) _template.Init(templatePath);
-            
-            TemplatesUIWriteKeywordsList(_template.Config.Keywords);                           
-        }
-        static void TemplatesUIWriteKeywordsList(List<TemplateConfigClass.KeywordClass>? list)
-        {
-            if (list != null)
-                foreach (var keyword in list)
-                    Console.WriteLine($"{keyword.ID}|{keyword.Value}");                     
+              
+            if (_template.Config.Keywords != null)
+                foreach (var keyword in _template.Config.Keywords)
+                    Console.WriteLine($"{keyword.ID}|{keyword.Value}");                        
         }
         static void TemplatesUICommandKeywordInsert(Command.Templates opts)
         {
@@ -408,44 +403,6 @@ namespace ASTools.Core
             else if (_template.TemplatePath != opts.SelectedTemplate) _template.Init(opts.SelectedTemplate);
                                                        
             _template.SetKeywordValue(new TemplateConfigClass.KeywordClass(){ID = opts.KeywordInsertName,Value = opts.KeywordInsertValue});               
-        }
-        static void TemplatesUICommandRepositoryAdd(string repository)
-        {
-            if (_templates == null) _templates = new();
-            if (!_runAsAdministrator) Console.WriteLine(ErrorToUI);
-            else
-            {
-                string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
-
-                if (!repositories.Contains(repository))
-                {
-                    string[] newRepositories = [.. repositories, repository];
-                        
-                    RegistryKey? key = Registry.LocalMachine.OpenSubKey(TemplatesRepositoriesListRegistryPath, writable: true);
-                    if (key != null) key.SetValue(TemplatesRepositoriesListRegistryKey,newRepositories,RegistryValueKind.MultiString);
-                    
-                    _templates.UpdateTemplatesList(repositories);  
-                }     
-            }   
-        }
-        static void TemplatesUICommandRepositoryRemove(string repository)
-        {
-            if (_templates == null) _templates = new();
-            if (!_runAsAdministrator) Console.WriteLine(ErrorToUI);
-            else
-            {
-                string[] repositories = TemplatesRetrieveTemplatesRepoFromRegistry();
-
-                if (repositories.Contains(repository))
-                {
-                    string[] newRepositories = repositories.Where(_ => _ != repository).ToArray();
-
-                    RegistryKey? key = Registry.LocalMachine.OpenSubKey(TemplatesRepositoriesListRegistryPath, writable: true);
-                    if (key != null) key.SetValue(TemplatesRepositoriesListRegistryKey,newRepositories,RegistryValueKind.MultiString);
-                    
-                    _templates.UpdateTemplatesList(repositories);  
-                }    
-            }    
         }
     }
 }

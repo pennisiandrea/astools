@@ -10,4 +10,4 @@ Aggiunta richiamo a Templates in click destro>new
 
 
 Salvataggio chiavi di sistema:
-    \HKEY_LOCAL_MACHINE\SOFTWARE\ASTools\ASTemplates
+    \HKEY_LOCAL_MACHINE\SOFTWARE\ASTools
