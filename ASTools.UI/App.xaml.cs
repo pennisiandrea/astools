@@ -65,11 +65,13 @@ public partial class App : Application
         switch (opts.Page)
         {
             case "templates": 
-                mainWindow.MainFrame.Navigate(new TemplatesPage(opts.WorkingDir));                    
+                mainWindow.MainFrame.Navigate(new TemplatesPage(opts.WorkingDir));   
+                                 
                 break;
 
             default:                
-                mainWindow.MainFrame.Navigate(new MainPage());
+                mainWindow.MainFrame.Navigate(new MainPage());   
+                mainWindow.Title = "ASTOOLS";                 
                 break;
         }
 

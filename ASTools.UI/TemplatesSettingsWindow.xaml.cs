@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.IO;
+using MahApps.Metro.Controls;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -11,7 +10,7 @@ namespace ASTools.UI
         public required string Path {get; set;}
     }
     
-    public partial class TemplatesSettingsWindow : Window
+    public partial class TemplatesSettingsWindow : MetroWindow
     {
         public ObservableCollection<RepositoryDataModel> RepositoriesList { get; set; } = [];
         private readonly App? _thisApp = Application.Current as App;
@@ -57,10 +56,9 @@ namespace ASTools.UI
             } while(!exit);
             
         }
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             _templatesPage.LoadTemplatesList();
-            this.Close();
         }
         private void RepositoriesListGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

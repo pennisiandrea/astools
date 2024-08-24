@@ -41,14 +41,11 @@ namespace ASTools.UI
         public ObservableCollection<TemplateDataModel> TemplatesList { get; set; } = [];
         private TemplateDataModel? _selectedTemplate;
         public ObservableCollection<KeywordDataModel> KeywordsList { get; set; } = [];
-        private readonly App? _thisApp = Application.Current as App;
-        
+        private readonly App? _thisApp = Application.Current as App;        
         private readonly string? _workingDir;
-
         public TemplatesPage()
         {
             InitializeComponent(); 
-
             templatesListGrid.ItemsSource = TemplatesList;  
             keywordsListGrid.ItemsSource = KeywordsList;   
             KeywordsList.CollectionChanged += KeywordsList_CollectionChanged;
@@ -97,6 +94,8 @@ namespace ASTools.UI
                 }
             } while(!exit);
             
+            if (templatesListGrid.Items.Count > 0)
+                templatesListGrid.SelectedIndex = 0;
         }
         private void LoadKeywordsList(string templatePath)
         {

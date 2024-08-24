@@ -11,3 +11,21 @@ Aggiunta richiamo a Templates in click destro>new
 
 Salvataggio chiavi di sistema:
     \HKEY_LOCAL_MACHINE\SOFTWARE\ASTools
+
+
+
+    <Page.Resources>
+         
+        <Style TargetType="DataGridCell">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Orange"/> 
+                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="BorderBrush" Value="Black"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
