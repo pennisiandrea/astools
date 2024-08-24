@@ -30,11 +30,10 @@ public partial class App : Application
 {
     public Process? ASToolsProcess;
     public StreamWriter? ASToolsInputInterface;
-    public readonly string ASToolsConsolePredefinedText = "astools > ";
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
         FileName = "C:\\Data\\astools\\astools.core\\bin\\Debug\\net8.0\\ASTools.Core.exe",
-        Arguments = "",
+        Arguments = "mode --ui",
         RedirectStandardInput = true,
         RedirectStandardOutput = true,
         RedirectStandardError = true,

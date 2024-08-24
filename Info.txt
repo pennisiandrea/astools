@@ -5,8 +5,8 @@ Aggiunta richiamo a Templates in click destro>new
     All'interno della chiave sarà presente un valore stringa di default che è la stringa che compare all'utente.
     Aggingere una sotto chiave di nome command e mettere il comando come valore di default.
 
-    esempio di comando: "C:\Data\astools\ASTools\bin\Debug\net8.0\ASTools.exe" "--working-dir" "%1"
-    dove "%1" è il path di esecuzione.
+    esempio di comando: "C:\Data\astools\ASTools.UI\bin\Debug\net8.0-windows\ASTools.UI.exe" "--page" "templates" "--working-dir" "%V"
+    dove "%V" è il path di esecuzione.
 
 
 Salvataggio chiavi di sistema:

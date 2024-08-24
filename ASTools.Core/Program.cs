@@ -3,22 +3,26 @@ using CommandLine;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using ConsoleTables;
-using System.Security.Principal;
-using System;
 using System.Text;
 
 namespace ASTools.Core
 {
     class Command
     {
-        // Templates module
-        [Verb("templates", HelpText = "Send command to Templates module")]
-        public class Templates
-        {            
-            // General options
-            [Option("ui", Default = false, HelpText = "Print results as expected by UI")]
+        [Verb("mode", HelpText = "Toggle presentation mode")]
+        public class Mode
+        { 
+            [Option("ui", SetName = "command", Default = false, HelpText = "Run as UI")]
             public bool UI { get; set; }
 
+            [Option("console", SetName = "command", Default = false, HelpText = "Run as console")]
+            public bool Console { get; set; }
+        }
+
+        // Templates module
+        [Verb("templates", HelpText = "Send command to Templates module")]
+        public class Templates 
+        {      
             [Option("selected", Default = null, HelpText = "Selected template")]
             public string? SelectedTemplate { get; set; }
             
@@ -52,9 +56,6 @@ namespace ASTools.Core
             public override string ToString()
             {
                 var str = "";
-                
-                if (UI) str += "\nUI format";
-                else str += "\nConsole format";
 
                 if (TemplatesList) str += "\nTemplate list command";
                 else if (Exec)
@@ -83,6 +84,7 @@ namespace ASTools.Core
         [Verb("exit", HelpText = "Exit command")]
         public class Exit
         { }
+    
     }
     class IniFile(string path)
     {
@@ -137,6 +139,7 @@ namespace ASTools.Core
         private static Templates? _templates;
         private static Template? _template;
         private static readonly string _configFilePath;
+        private static bool _executionByUI = false;
 
         static Program()
         {
@@ -156,15 +159,19 @@ namespace ASTools.Core
             {
                 if (listNewCmd.Count > 0)
                 {
-                    Parser.Default.ParseArguments<Command.Templates,Command.Exit>(listNewCmd)
+                    Parser.Default.ParseArguments<Command.Mode,Command.Templates,Command.Exit>(listNewCmd)
+                        .WithParsed<Command.Mode>(opts => ModeRunCommands(opts))
                         .WithParsed<Command.Templates>(opts => TemplatesRunCommands(opts))
                         .WithParsed<Command.Exit>(opts => {exit = true;})
                         .WithNotParsed(errors => HandleParseError(errors));
                 }
                 if (!exit)
                 {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.Write("astools > ");
+                    if (!_executionByUI)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.Write("astools > ");
+                    }
                     do
                     {
                         Console.ForegroundColor = ConsoleColor.White;
@@ -180,7 +187,13 @@ namespace ASTools.Core
             }  
         }
         
-        // General
+        static int ModeRunCommands(Command.Mode opts)
+        {   
+            if(opts.UI) _executionByUI = true;
+            else if(opts.Console) _executionByUI = false;
+
+            return 0;
+        }
         private static void HandleParseError(IEnumerable<Error> errors)
         {
             if (errors != null){
@@ -206,8 +219,8 @@ namespace ASTools.Core
         static int TemplatesRunCommands(Command.Templates opts)
         {
             TemplatesCheckCommand(opts);
-
-            if(opts.UI) TemplatesUICommands(opts);
+            
+            if(_executionByUI) TemplatesUICommands(opts);
             else TemplatesConsoleCommands(opts);
 
             return 0;
