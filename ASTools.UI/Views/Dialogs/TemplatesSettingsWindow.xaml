@@ -11,6 +11,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         
         <!-- Templates list -->
@@ -26,14 +27,16 @@
             </DataGrid.Columns>
         </DataGrid>
 
+        <Separator Grid.Row="1"/>
+
         <!-- selectedRepositoryPath text box -->
         <TextBox    Name="selectedRepositoryPath"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Margin="10"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Stretch"/>
         
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
             <!-- Remove button -->
             <Button Name="removeButton"
                     Content="Remove"

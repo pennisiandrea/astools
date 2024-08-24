@@ -1,16 +1,10 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Principal;
 using CommandLine;
-using System.Windows.Navigation;
-using System.Windows.Controls;
-using System;
 
 namespace ASTools.UI;
-class Command
+public class Command
 {
     // Startup page
     [Option("page", Default = null, HelpText = "Page to open")]
@@ -28,8 +22,7 @@ class Command
 
 public partial class App : Application
 {
-    public Process? ASToolsProcess;
-    public StreamWriter? ASToolsInputInterface;
+    public static Process ASToolsProcess {get; private set;} = null!;
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
         FileName = "C:\\Data\\astools\\astools.core\\bin\\Debug\\net8.0\\ASTools.Core.exe",
@@ -39,38 +32,37 @@ public partial class App : Application
         RedirectStandardError = true,
         UseShellExecute = false,
         CreateNoWindow = true
-    };
+    }; 
+    public static Command Arguments {get; private set;} = null!;
+    
+    public App()
+    {
+        ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");  
+    }
+    
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
         this.Exit += new ExitEventHandler(App_Exit);
-
-        ASToolsStart();
         
         Parser.Default.ParseArguments<Command>(e.Args)
-                    .WithParsed<Command>(opts => RunCommands(opts));
+                    .WithParsed<Command>(opts => {Arguments = opts;});
 
+        OpenStartupPage();
     }
-    private static void RunCommands(Command opts)
-    {
-        // Manage startup page
-        OpenStartupPage(opts);
-    }
-    private static void OpenStartupPage (Command opts)
+    private static void OpenStartupPage ()
     {
         MainWindow mainWindow = new();
 
-        switch (opts.Page)
+        switch (Arguments.Page)
         {
             case "templates": 
-                mainWindow.MainFrame.Navigate(new TemplatesPage(opts.WorkingDir));   
-                                 
+                mainWindow.MainFrame.Navigate(new TemplatesPage());            
                 break;
 
             default:                
-                mainWindow.MainFrame.Navigate(new MainPage());   
-                mainWindow.Title = "ASTOOLS";                 
+                mainWindow.MainFrame.Navigate(new MainPage());                   
                 break;
         }
 
@@ -80,25 +72,31 @@ public partial class App : Application
     {
         ASToolsClose();
     } 
-    private void ASToolsClose()
+    private static void ASToolsClose()
     {
-        ASToolsInputInterface?.Close();
+        ASToolsProcess.StandardInput?.Close();
 
         ASToolsProcess?.Kill();
     }
-    private void ASToolsStart()
+    public static List<string> ASToolsSendCommand(string command)
     {
-        try
+        // Clear pending data
+        ASToolsProcess.StandardOutput.DiscardBufferedData();
+
+        // Send command
+        ASToolsProcess.StandardInput.WriteLine(command);
+
+        // Read process output
+        bool exit = false;
+        List<string> answer = [];
+        do
         {
-            ASToolsProcess = Process.Start(_astoolsProcessStartInfo);  
-            if (ASToolsProcess != null)
-                ASToolsInputInterface = ASToolsProcess.StandardInput;
-        }
-        catch (System.Exception ex)
-        {
-            MessageBox.Show($"Errore: {ex.Message}", "Errore", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+            string? line = App.ASToolsProcess.StandardOutput.ReadLine();
+            if (line == null || line == string.Empty) exit = true;
+            else answer.Add(line);
+        } while(!exit);
         
+        return answer;
     }
 }
 

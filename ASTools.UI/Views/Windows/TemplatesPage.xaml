@@ -7,8 +7,11 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="2*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         
@@ -29,9 +32,11 @@
                 IsEnabled="True"
                 Click="HomeButton_Click" />
 
+        <Separator Grid.Row="1"/>
+
         <!-- Templates list -->
         <DataGrid Name="templatesListGrid"
-                  Grid.Row="1"
+                  Grid.Row="2"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
@@ -43,9 +48,11 @@
             </DataGrid.Columns>
         </DataGrid>
 
+        <Separator Grid.Row="3"/>
+
         <!-- Keywords list -->
         <DataGrid Name="keywordsListGrid"
-                  Grid.Row="2"
+                  Grid.Row="4"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   SelectionMode="Single">
@@ -55,7 +62,9 @@
             </DataGrid.Columns>
         </DataGrid>
         
-        <Grid Grid.Row="3">
+        <Separator Grid.Row="5"/>
+
+        <Grid Grid.Row="6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" /> 
                 <ColumnDefinition Width="Auto" />

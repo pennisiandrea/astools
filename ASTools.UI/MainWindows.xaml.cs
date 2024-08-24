@@ -1,6 +1,5 @@
 using System.Windows.Navigation;
 using MahApps.Metro.Controls;
-using System.Windows;
 using System.Windows.Controls;
 
 namespace ASTools.UI

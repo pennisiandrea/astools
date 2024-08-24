@@ -51,6 +51,8 @@ namespace ASTools.Core
             public string? KeywordInsertName { get; set; }
             [Option("k-value", Default = null, HelpText = "Name of the keyword to insert")]
             public string? KeywordInsertValue { get; set; }
+            [Option("k-clean", SetName = "command", Default = false, HelpText = "Clean recorded keywords")]
+            public bool KeywordsClean { get; set; }
 
             // ToString override
             public override string ToString()
@@ -244,6 +246,15 @@ namespace ASTools.Core
             _templates ??= new(_configFilePath);
             _templates.RemoveRepository(repository);  
         }
+        static void TemplatesCommandKeywordClean(string? templatePath)
+        {
+            if (templatePath == null) throw new Exception($"No template path provided");
+            if (_template != null)
+            {
+                if (_template.TemplatePath != templatePath) _template.Init(templatePath);
+                else _template.ResetKeywordsValues();
+            }
+        }
 
         // Templates - Console
         static void TemplatesConsoleCommands(Command.Templates opts)
@@ -253,6 +264,7 @@ namespace ASTools.Core
             else if (opts.Exec) TemplatesConsoleCommandExec(opts);          
             else if (opts.KeywordsList) TemplatesConsoleCommandKeywordsList(opts.SelectedTemplate);  
             else if (opts.KeywordInsertName != null) TemplatesConsoleCommandKeywordInsert(opts); 
+            else if (opts.KeywordsClean) TemplatesCommandKeywordClean(opts.SelectedTemplate); 
             else if (opts.RepositoriesList) TemplatesConsoleCommandRepositoriesList(); 
             else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
             else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 
@@ -362,7 +374,8 @@ namespace ASTools.Core
             if (opts.TemplatesList) TemplatesUICommandTemplatesList();   
             else if (opts.Exec) TemplatesUICommandExec(opts);    
             else if (opts.KeywordsList) TemplatesUICommandKeywordsList(opts.SelectedTemplate); 
-            else if (opts.KeywordInsertName != null) TemplatesUICommandKeywordInsert(opts);   
+            else if (opts.KeywordInsertName != null) TemplatesUICommandKeywordInsert(opts);    
+            else if (opts.KeywordsClean) TemplatesCommandKeywordClean(opts.SelectedTemplate); 
             else if (opts.RepositoriesList) TemplatesUICommandRepositoriesList();    
             else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
             else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 

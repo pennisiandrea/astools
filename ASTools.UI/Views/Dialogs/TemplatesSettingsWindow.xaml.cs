@@ -8,123 +8,85 @@ namespace ASTools.UI;
 public partial class TemplatesSettingsWindow : MetroWindow
 {
     public ObservableCollection<RepositoryDataModel> RepositoriesList { get; set; } = [];
-    private readonly App? _thisApp = Application.Current as App;
     private readonly TemplatesPage _templatesPage;
+    private bool _repositoriesListChanged = false;
+    
     public TemplatesSettingsWindow(TemplatesPage templatesPage)
     {
         InitializeComponent();
         repositoriesListGrid.ItemsSource = RepositoriesList;
         _templatesPage = templatesPage;
     }
+    
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {            
-        try
-        {
-            LoadRepositoriesList();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error while executing command: {ex.Message}");
-        }
+        // Load repositories list at window open
+        LoadRepositoriesList();        
     }
     private void LoadRepositoriesList()
     {
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
-
-        // Clear template list
-        RepositoriesList.Clear(); 
-
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
         // Send command
-        _thisApp.ASToolsInputInterface.WriteLine("templates --repo-list");
+        var answer = App.ASToolsSendCommand("templates --repo-list");
 
-        // Read process output
-        bool exit = false;
-        do
-        {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-            else RepositoriesList.Add(new RepositoryDataModel{ Path = line});            
-        } while(!exit);
-        
+        // Fill RepositoriesList with new values
+        RepositoriesList.Clear(); 
+        foreach (var line in answer)
+            RepositoriesList.Add(new RepositoryDataModel{Path = line});
+             
+        // Select first element
+        if (repositoriesListGrid.Items.Count > 0)
+            repositoriesListGrid.SelectedIndex = 0;   
     }
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-        _templatesPage.LoadTemplatesList();
+        // When closing the page, is any change happens, trigger the reload of templates list. 
+        if (_repositoriesListChanged)
+            _templatesPage.LoadTemplatesList();
     }
     private void RepositoriesListGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (repositoriesListGrid.SelectedItem != null)
-        {
-            var selectedRow = repositoriesListGrid.SelectedItem;
-
-            if (selectedRow is RepositoryDataModel dataItem)
-                selectedRepositoryPath.Text = dataItem.Path;
-            else throw new Exception($"Error loading data from repository list");
-        }
+        if (repositoriesListGrid.SelectedItem == null) return;
+        
+        // Get selected repository
+        var dataItem = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
+        
+        // Put its path to the editing text box
+        selectedRepositoryPath.Text = dataItem.Path;
     }
     private void RemoveButton_Click(object sender, RoutedEventArgs e)
     {
-        if (repositoriesListGrid.SelectedItem != null)
-        {
-            var selectedRow = repositoriesListGrid.SelectedItem;
+        if (repositoriesListGrid.SelectedItem == null) return;
+        
+        // Get selected repository
+        var dataItem = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
+        
+        // Send remove command
+        App.ASToolsSendCommand($"templates --repo-remove {dataItem.Path}");
 
-            if (selectedRow is RepositoryDataModel dataItem)
-            {
-                if (_thisApp == null) throw new Exception($"Missing reference to application");
-                if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
-
-                // Clear pending data
-                _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
-                // Send command
-                _thisApp.ASToolsInputInterface.WriteLine($"templates --repo-remove {dataItem.Path}");
-
-                // Wait end of command
-                bool exit = false;
-                do
-                {
-                    string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-                    if (line == null || line == string.Empty) exit = true;
-                } while(!exit);
-
-                LoadRepositoriesList();
-                
-                if (repositoriesListGrid.Items.Count > 0)
-                    repositoriesListGrid.SelectedIndex = 0;
-            }
-            else throw new Exception($"Error loading data from repository list");
-        }              
+        // Reload repositories list
+        LoadRepositoriesList();  
+        
+        // Save repositories list changed flag
+        _repositoriesListChanged = true;  
     }
     private void NewButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
+    {        
+        // Send add command
+        App.ASToolsSendCommand($"templates --repo-add {selectedRepositoryPath.Text}");
 
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
-        // Send command
-        _thisApp.ASToolsInputInterface.WriteLine($"templates --repo-add {selectedRepositoryPath.Text}");
-
-        // Wait end of command
-        bool exit = false;
-        do
-        {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-        } while(!exit);
-        
+        // Reload repositories list
         LoadRepositoriesList();   
         
+        // Save repositories list changed flag
+        _repositoriesListChanged = true;    
+        
+        // Select the last element of the list
         if (repositoriesListGrid.Items.Count > 0)
             repositoriesListGrid.SelectedIndex = repositoriesListGrid.Items.Count - 1;         
     }
     private void RepositoriesListGrid_Loaded(object sender, RoutedEventArgs e)
     {
+        // RepositoriesList loaded -> Select the first element of the list
         if (repositoriesListGrid.Items.Count > 0)
             repositoriesListGrid.SelectedIndex = 0;            
     }

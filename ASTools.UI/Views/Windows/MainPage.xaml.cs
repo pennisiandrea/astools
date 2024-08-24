@@ -13,6 +13,6 @@ public partial class MainPage : Page
     
     private void Button_Template_Click(object sender, RoutedEventArgs e)
     {
-        NavigationService.Navigate(new TemplatesPage(null));
+        NavigationService.Navigate(new TemplatesPage());
     }
 }

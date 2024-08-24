@@ -11,187 +11,129 @@ public partial class TemplatesPage : Page
 {
     public ObservableCollection<TemplateDataModel> TemplatesList { get; set; } = [];
     private TemplateDataModel? _selectedTemplate;
-    public ObservableCollection<KeywordDataModel> KeywordsList { get; set; } = [];
-    private readonly App? _thisApp = Application.Current as App;        
-    private readonly string? _workingDir;
+    public ObservableCollection<KeywordDataModel> KeywordsList { get; set; } = [];       
+    
     public TemplatesPage()
     {
         InitializeComponent(); 
+
         templatesListGrid.ItemsSource = TemplatesList;  
         keywordsListGrid.ItemsSource = KeywordsList;   
+        workingDirectoryTextBox.Text = App.Arguments.WorkingDir ?? "";
+
         KeywordsList.CollectionChanged += KeywordsList_CollectionChanged;
     }
-    public TemplatesPage(string? workingDir) : this()
-    { 
-        _workingDir = workingDir;
-        workingDirectoryTextBox.Text = workingDir ?? "";
-    }
+    
     private void Window_Loaded(object sender, RoutedEventArgs e)
-    {            
-        try
-        {
-            LoadTemplatesList();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error while executing command: {ex.Message}");
-        }
+    {    
+        // Load templates list at window opening
+        LoadTemplatesList();
     }
     public void LoadTemplatesList()
     {
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
+        // Send command 
+        var answer = App.ASToolsSendCommand("templates --list");
 
-        // Clear template list
+        // Fill TemplatesList with new values
         TemplatesList.Clear(); 
-
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
-        // Send command
-        _thisApp.ASToolsInputInterface.WriteLine("templates --list");
-
-        // Read process output
-        bool exit = false;
-        do
+        foreach (var line in answer)
         {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-            else 
-            {
-                var parts = line.Split('|');
-                if (parts.Length == 3)
-                    TemplatesList.Add(new TemplateDataModel { Name = parts[1].Trim(), Path = parts[2].Trim() });                        
-            }
-        } while(!exit);
+            var parts = line.Split('|');
+            if (parts.Length == 3)
+                TemplatesList.Add(new TemplateDataModel { Name = parts[1].Trim(), Path = parts[2].Trim() });
+        }
         
+        // Select first element in the grid
         if (templatesListGrid.Items.Count > 0)
             templatesListGrid.SelectedIndex = 0;
     }
     private void LoadKeywordsList(string templatePath)
-    {
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
-
-        // Clear template list
-        KeywordsList.Clear(); 
-
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
+    {        
         // Send command
-        _thisApp.ASToolsInputInterface.WriteLine($"templates --selected {templatePath} --k-list");
+        var answer = App.ASToolsSendCommand($"templates --selected {templatePath} --k-list");
 
-        // Read process output
-        bool exit = false;
-        do
+        // Fill KeywordsList with new values
+        KeywordsList.Clear(); 
+        foreach (var line in answer)
         {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-            else 
-            {
-                var parts = line.Split('|');
-                if (parts.Length == 2)
-                    KeywordsList.Add(new KeywordDataModel { Keyword = parts[0].Trim(), Value = parts[1].Trim() });                        
-            }
-        } while(!exit);
-        
+            var parts = line.Split('|');
+            if (parts.Length == 2)
+                KeywordsList.Add(new KeywordDataModel { Keyword = parts[0].Trim(), Value = parts[1].Trim() });  
+        }        
     }
     private void TemplatesListGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (templatesListGrid.SelectedItem != null)
-        {
-            var selectedRow = templatesListGrid.SelectedItem;
+        if (templatesListGrid.SelectedItem == null) return;
+        
+        // Save selected template for future uses
+        _selectedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
 
-            if (selectedRow is TemplateDataModel dataItem)
-            {
-                _selectedTemplate = dataItem;
-                LoadKeywordsList(_selectedTemplate.Path);
-            }
-            else throw new Exception($"Error loading data from templates list");
-        }
+        // Load keywords of selected template
+        LoadKeywordsList(_selectedTemplate.Path);        
     }
     private void KeywordsList_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        // Gestisci aggiunta di nuovi elementi
-        if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && e.NewItems != null)
+        if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Add || e.NewItems == null) return;
+        
+        // Link each keyword in the list to the ValueChanged event. This is used to trigger the change value event
+        foreach (var newItem in e.NewItems)
         {
-            foreach (var newItem in e.NewItems)
-            {
-                if (newItem is KeywordDataModel keyword)
-                {
-                    keyword.PropertyChanged += Keyword_ValueChanged;
-                }
-            }
-        }  
+            if (newItem is KeywordDataModel keyword)
+                keyword.PropertyChanged += Keyword_ValueChanged;            
+        }
+        
+        // Check if enabling Execute button
         CheckExecuteButtonEnable();
     }
     private void Keyword_ValueChanged(object? sender, PropertyChangedEventArgs e)
     {
+        // A value is changed in a keyword. Check if is possible to enable Execute button
         CheckExecuteButtonEnable();
     }
-    private void KeywordSendValueToASTools(TemplateDataModel template, KeywordDataModel keyword)
+    private static void KeywordSendValueToASTools(TemplateDataModel template, KeywordDataModel keyword)
     {
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
-
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
         // Send command
-        _thisApp.ASToolsInputInterface.WriteLine($"templates --selected \"{template.Path}\" --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");
-        
-        // Wait end of command
-        bool exit = false;
-        do
-        {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-        } while(!exit);                    
+        App.ASToolsSendCommand($"templates --selected \"{template.Path}\" --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");                   
     }
     private void CheckExecuteButtonEnable()
     {
+        // Execute button is enabled only if all keywords are filled.
         executeButton.IsEnabled = KeywordsList.All(_ => _.Value != null && _.Value != string.Empty);
     }
     private void ExecuteButton_Click(object sender, RoutedEventArgs e)
     {
+        // Execute command can be sent only if a template was selected and a working directory is available
         if (_selectedTemplate == null) throw new Exception($"No template selected");
+        if (workingDirectoryTextBox.Text == null) throw new Exception($"No working directory");
+
+        // Send keywords
         foreach (var keyword in KeywordsList)
             KeywordSendValueToASTools(_selectedTemplate,keyword);
-
-        if (_thisApp == null) throw new Exception($"Missing reference to application");
-        if (_thisApp.ASToolsProcess == null || _thisApp.ASToolsInputInterface == null) throw new Exception($"Missing reference to ASTools process");
-
-        // Clear pending data
-        _thisApp.ASToolsProcess.StandardOutput.DiscardBufferedData();
-
-        if (_workingDir == null) throw new Exception($"No working directory");
-        // Send command
-        _thisApp.ASToolsInputInterface.WriteLine($"templates --selected \"{_selectedTemplate.Path}\" --exec --exec-working-dir \"{_workingDir}\"");
         
-        // Wait end of command
-        bool exit = false;
-        do
-        {
-            string? line = _thisApp.ASToolsProcess.StandardOutput.ReadLine();
-            if (line == null || line == string.Empty) exit = true;
-        } while(!exit);
-
-        // Reset keywords at the end of command in order to prevent unintentional multiple executions
-        LoadKeywordsList(_selectedTemplate.Path);
+        // Send execute
+        App.ASToolsSendCommand($"templates --selected \"{_selectedTemplate.Path}\" --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");                   
+        
+        // Clean keywords on seleced template in order to prevent unintentional multiple executions
+        App.ASToolsSendCommand($"templates --selected \"{_selectedTemplate.Path}\" --k-clean");                   
+        foreach (var keyword in KeywordsList)
+            keyword.Value = string.Empty;
     }
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
+        // Open settings page as a dialog modal
         TemplatesSettingsWindow mainWindow = new(this);
         mainWindow.ShowDialog();
     }
     private void HomeButton_Click(object sender, RoutedEventArgs e)
     {
+        // Go back to main page
         NavigationService.Navigate(new MainPage());
     }
     private void TemplatesListGrid_Loaded(object sender, RoutedEventArgs e)
-    {
+    {          
+        // Templates list loaded -> select the first element
         if (templatesListGrid.Items.Count > 0)
-            templatesListGrid.SelectedIndex = 0;            
+            templatesListGrid.SelectedIndex = 0; 
     }
+    
 }

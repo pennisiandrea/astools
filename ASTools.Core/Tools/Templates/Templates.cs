@@ -316,6 +316,10 @@ namespace ASTools.Core.Tools.Templates
                 _config.Keywords.First(_ => _.ID == keyword.ID).Value = keyword.Value; 
             else throw new Exception($"Wrong keyword {keyword} provided!");
         }
+        public void ResetKeywordsValues()
+        {
+            _config.Keywords?.ForEach(_ => _.Value = string.Empty); 
+        }
         private void CalculateConfigConstants(string templatePath, string userPath)
         {
             // These constants are fixed
