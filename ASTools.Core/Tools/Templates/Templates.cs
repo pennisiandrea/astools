@@ -116,94 +116,101 @@ namespace ASTools.Core.Tools.Templates
 
     public class Templates
     {     
+        // Models
         public class TemplateListItem(int id, string path, string name)
         {
             public int ID = id;
             public string Path = path;
             public string Name = name;
         }
+        
+        // Fields & properties
         private readonly List<TemplateListItem> _templatesList = [];
         public List<TemplateListItem> TemplatesList { get => _templatesList;}
         private readonly List<string> _repositories = [];
         public List<string> Repositories { get => _repositories; }
         private readonly string _configFilePath;
 
+        // Constructor
         public Templates(string configFilePath)
         {            
+            if (!File.Exists(configFilePath)) throw new Exception($"{configFilePath} is not a valid file!");
             _configFilePath = configFilePath;
             GetConfigParameters();
         }
         
+        // Methods
         public List<TemplateListItem> UpdateTemplatesList()
         {
             _templatesList.Clear();
+
             int id = 0;
             foreach (var path in _repositories)
             {
-                if (!Directory.Exists(path)) throw new Exception($"Templates path {path} invalid");
-                DirectoryInfo dir = new(path);
+                if (Directory.Exists(path))
+                {
+                    DirectoryInfo dir = new(path);
 
-                foreach (var template in dir.GetDirectories())
-                    _templatesList.Add(new TemplateListItem(id++,template.FullName,template.Name));                
+                    foreach (var template in dir.GetDirectories())
+                        _templatesList.Add(new TemplateListItem(id++,template.FullName,template.Name));    
+                }            
             }
                         
             return TemplatesList;
         }
-
         public void AddRepository (string repository)
         {
-            if (!_repositories.Contains(repository) && Directory.Exists(repository))
-            {
-                var iniFile = new IniFile(_configFilePath);
+            if (_repositories.Contains(repository)) throw new Exception($"{repository} already registered!");
+            if (!Directory.Exists(repository)) throw new Exception($"{repository} is not a valid path!");
+            
+            var iniFile = new IniFile(_configFilePath);
 
-                for (int i = 1; ; i++)
+            for (int i = 1; ; i++)
+            {
+                string tmprepository = iniFile.Read("Templates", $"Repository{i}");
+                if (string.IsNullOrEmpty(tmprepository))
                 {
-                    string tmprepository = iniFile.Read("Templates", $"Repository{i}");
-                    if (string.IsNullOrEmpty(tmprepository))
-                    {
-                        iniFile.Write("Templates", $"Repository{i}",repository);
-                        break;
-                    }
+                    iniFile.Write("Templates", $"Repository{i}",repository);
+                    break;
                 }
-                GetConfigParameters();
-                UpdateTemplatesList();
             }
+            GetConfigParameters();
+            UpdateTemplatesList();            
         }
         public void RemoveRepository (string repository)
         {            
-            if (_repositories.Contains(repository))
+            if (!_repositories.Contains(repository)) throw new Exception($"{repository} is not part of registered repositories!");
+            
+            var iniFile = new IniFile(_configFilePath);
+            var shift = false;
+            for (int i = 1; ; i++)
             {
-                var iniFile = new IniFile(_configFilePath);
-                var shift = false;
-                for (int i = 1; ; i++)
-                {
-                    string actRepository = iniFile.Read("Templates", $"Repository{i}");
+                string actRepository = iniFile.Read("Templates", $"Repository{i}");
 
-                    if (shift)
-                    {    
-                        if (string.IsNullOrEmpty(actRepository)) {
-                            iniFile.DeleteKey("Templates", $"Repository{i-1}");
-                            break;    
-                        }   
-                        else
-                        {
-                            iniFile.Write("Templates", $"Repository{i-1}",actRepository);
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(actRepository)) break;
-                    else if (actRepository == repository) shift = true;    
+                if (shift)
+                {    
+                    if (string.IsNullOrEmpty(actRepository)) {
+                        iniFile.DeleteKey("Templates", $"Repository{i-1}");
+                        break;    
+                    }   
+                    else iniFile.Write("Templates", $"Repository{i-1}",actRepository);                    
                 }
-                GetConfigParameters();
-                UpdateTemplatesList();
+
+                if (string.IsNullOrEmpty(actRepository)) break;
+                else if (actRepository == repository) shift = true;    
             }
+            GetConfigParameters();
+            UpdateTemplatesList();            
         }
         private void GetConfigParameters()
         {
+            // Clear repositories list
             _repositories.Clear();
 
+            // Open config.ini file 
             var iniFile = new IniFile(_configFilePath);
 
+            // Read all parameters under [Templates] section named like Repository1, Repository2...
             for (int i = 1; ; i++)
             {
                 string repository = iniFile.Read("Templates", $"Repository{i}");
@@ -217,7 +224,10 @@ namespace ASTools.Core.Tools.Templates
 
     public class Template
     {   
-        // Fields
+        // Constants
+        private const string DefaultTemplateConfigFile = "template_config.xml";
+
+        // Fields & properties
         private readonly Dictionary<string,string> _configConstants = new ()
         {
             {"$CONFIG_FILE_NAME",string.Empty},
@@ -227,30 +237,27 @@ namespace ASTools.Core.Tools.Templates
             {"$ACTIVE_CONFIGURATION_PATH",string.Empty}
         };
         public Dictionary<string,string> ConfigConstants { get => _configConstants;}
-        private TemplateConfigClass _config;
+        private readonly TemplateConfigClass _config;
         public TemplateConfigClass Config { get => _config;}
-        public bool KeywordsReady {get => _config.Keywords?.All(_ => _.Value != null) ?? true;}
+        public bool KeywordsReady {get => _config.Keywords?.All(_ => !string.IsNullOrEmpty(_.Value)) ?? true;}
         public bool Ready { get => KeywordsReady; }
-        private string _templatePath;
+        private readonly string _templatePath;
         public string TemplatePath { get => _templatePath;}
-
-        private const string DefaultTemplateConfigFile = "template_config.xml";
+        
         // Constructor
         public Template(string templatePath)
-        {         
-            Init(templatePath);  
-            if (_config == null) throw new Exception($"Invalid configuration"); 
-            if (_templatePath == null) throw new Exception($"Invalid template"); 
+        {        
+            if (!Directory.Exists(templatePath)) throw new Exception($"Template {templatePath} is not valid");
+
+            _config = GetConfig(templatePath);
+            _templatePath = templatePath; 
         }
 
         // Methods
-        public void Init (string templatePath)
-        {
-            _config = GetConfig(templatePath);
-            _templatePath = templatePath;
-        }
         public void Execute(string userPath)
         {
+            if (!Directory.Exists(userPath)) throw new Exception($"Path {userPath} is not valid");
+
             CalculateConfigConstants(_templatePath, userPath);
 
             // Replace constants in config structure:            
@@ -262,50 +269,55 @@ namespace ASTools.Core.Tools.Templates
             }            
             
             // Execute instructions
-            if (!Ready) throw new Exception($"Template not ready yet. Try set keywords.");
+            if (!Ready) throw new Exception($"Template not ready yet. Try set keywords before execute.");
             foreach (var instruction in _config.Instructions)
             {
                 switch (instruction.Type)
                 {
                     case "Copy":
-                        if (instruction.Source != null && instruction.Destination != null)
-                        {                                
-                            string newDestPath = Copy(instruction.Destination.Path,instruction.Source.Path);
+                        if (instruction.Source == null || instruction.Destination == null) throw new Exception($"Copy instruction failed! Invalid paths.");
+                                                        
+                        string newDestPath = Copy(instruction.Destination.Path,instruction.Source.Path);
+                        if (_config.Keywords != null)
+                            newDestPath = ReplaceKeywords(newDestPath,_config.Keywords);                                
+
+                        if (instruction.Source.Type != null) // A type was specified -> Add xml element to descriptive file     
+                        {                      
+                            AddDescriptiveXmlElement(newDestPath,instruction.Source.Type);
+
                             if (_config.Keywords != null)
-                                newDestPath = ReplaceKeywords(newDestPath,_config.Keywords);                                
-
-                            if (instruction.Source.Type != null) // A type was specified -> Add xml element to descriptive file     
-                            {                      
-                                AddDescriptiveXmlElement(newDestPath,instruction.Source.Type);
-
-                                if (_config.Keywords != null)
-                                {
-                                    string? descriptivePath = Path.GetDirectoryName(newDestPath);
-                                    if (descriptivePath != null)
-                                        ReplaceKeywords(GetASDescriptiveFile(descriptivePath).FullName,_config.Keywords);
-                                }
+                            {
+                                string? descriptivePath = Path.GetDirectoryName(newDestPath);
+                                if (descriptivePath != null)
+                                    ReplaceKeywords(GetASDescriptiveFile(descriptivePath).FullName,_config.Keywords);
                             }
-                        }                            
+                        }
+                                                   
                         break;
 
                     case "Append":
-                        if (instruction.Source != null && instruction.Destination != null)
-                        {     
-                            //Since destination file should already exists I have to replace keywords in it before proceed with append command
-                            if (_config.Keywords != null)
-                                foreach (var keyword in _config.Keywords)
-                                    instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                    
-                            
-                            Append(instruction.Destination.Path,instruction.Source.Path);
-                            if (_config.Keywords != null)
-                                ReplaceKeywords(instruction.Destination.Path,_config.Keywords);
-                        }                            
+                        if (instruction.Source == null || instruction.Destination == null) throw new Exception($"Append instruction failed! Invalid paths.");
+                             
+                        //Since destination file should already exists I have to replace keywords in it before proceed with append command
+                        if (_config.Keywords != null)
+                            foreach (var keyword in _config.Keywords)
+                                instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                    
+                        
+                        Append(instruction.Destination.Path,instruction.Source.Path);
+                        
+                        if (_config.Keywords != null)
+                            ReplaceKeywords(instruction.Destination.Path,_config.Keywords);
+                                                    
                         break;
                         
                     case "AddXmlElement":
-                        if (instruction.Destination != null && instruction.XmlElements2Add != null)
-                            AddXmlElementsToFile(instruction.XmlElements2Add.XmlElements,instruction.XmlElements2Add.Path,instruction.Destination.Path);
+                        if (instruction.Destination == null || instruction.XmlElements2Add == null) throw new Exception($"AddXmlElement instruction failed! Invalid path or Xml elements");
+                        
+                        AddXmlElementsToFile(instruction.XmlElements2Add.XmlElements,instruction.XmlElements2Add.Path,instruction.Destination.Path);
                         break;
+                
+                    default:
+                        throw new Exception($"Instruction type not supported.");
                 }
             }
             
@@ -332,6 +344,7 @@ namespace ASTools.Core.Tools.Templates
             // These constants are calculated only if required by template's config file
             string configFileFullName = Path.Combine(_configConstants["$TEMPLATE_PATH"],_configConstants["$CONFIG_FILE_NAME"]);
             if (!File.Exists(configFileFullName)) throw new Exception($"{configFileFullName} file not found!");
+            
             string configFileContent = File.ReadAllText(configFileFullName);
 
             if (configFileContent.Contains("$PROJECT_PATH") || configFileContent.Contains("$ACTIVE_CONFIGURATION_PATH"))
@@ -429,7 +442,7 @@ namespace ASTools.Core.Tools.Templates
         }
         private static string Copy(string destPath, string sourcePath)
         {
-            string copiedPath = string.Empty;
+            string copiedPath;
 
             if (File.Exists(sourcePath)) // Copying a single file
             {
@@ -464,6 +477,8 @@ namespace ASTools.Core.Tools.Templates
                     Copy(newDestPath, directory.FullName);
                 }             
             }
+            else throw new Exception($"Invalid path to copy: {sourcePath}");
+
             return copiedPath;
         }
         private static void Append(string destPath, string sourcePath)
@@ -559,11 +574,20 @@ namespace ASTools.Core.Tools.Templates
         }
         private static FileInfo GetASDescriptiveFile(string path)
         {
-            DirectoryInfo dirInfo = new(path);
-            return dirInfo.GetFiles().First(file => file.Extension == ".pkg" || file.Extension == ".lby");    
+            try
+            {
+                DirectoryInfo dirInfo = new(path);
+                return dirInfo.GetFiles().First(file => file.Extension == ".pkg" || file.Extension == ".lby");   
+            }
+            catch (System.Exception)
+            {
+                throw new Exception($"Cannot find descriptive file (.pkg or .lby) in {path}");
+            }   
         }
         private static void AddXmlElementsToFile(XmlElement[] elements, string xmlPath, string filePath)
         {
+            if (!File.Exists(filePath)) throw new Exception($"Cannot find xml file {filePath}.");
+
             // Carica il documento XML dal file
             XmlDocument xmlDoc = new();
             xmlDoc.Load(filePath);
@@ -613,18 +637,12 @@ namespace ASTools.Core.Tools.Templates
             XmlElement[] newElement = [GetDescriptiveXmlElement(type,itemName)];
 
             // Get xmlPath
-            string? xmlPath = null;
-            switch (descriptiveFile.Extension)
+            string xmlPath = descriptiveFile.Extension switch
             {
-                case ".pkg":
-                    xmlPath = "/ns:Package/ns:Objects";
-                    break;
-
-                case ".lby":      
-                    xmlPath = "/ns:Library/ns:Objects";
-                    break;                    
-            }
-            if (xmlPath == null) throw new Exception($"Descriptive file {descriptiveFile.FullName} not supported.");
+                ".pkg" => "/ns:Package/ns:Objects",
+                ".lby" => "/ns:Library/ns:Objects",
+                _ => throw new Exception($"Descriptive file extension {descriptiveFile.Extension} not supported."),
+            };
 
             // Add element to xml
             AddXmlElementsToFile(newElement,xmlPath,descriptiveFile.FullName);

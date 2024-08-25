@@ -7,7 +7,7 @@
             "request": "launch",
             "preLaunchTask": "Build ASTools.Core",
             "program": "${workspaceFolder}/ASTools.Core/bin/Debug/net8.0/ASTools.Core.dll",
-            "args": [],
+            "args": ["templates","--selected","C:\\Data\\astools\\tools\\templates\\stdmodule","--k-list"],
             "cwd": "${workspaceFolder}/ASTools.Core",
             "stopAtEntry": false,
             "console": "internalConsole",

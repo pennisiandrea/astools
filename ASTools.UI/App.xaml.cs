@@ -1,7 +1,8 @@
 ﻿using System.Windows;
 using System.Diagnostics;
-using System.IO;
 using CommandLine;
+using System.ComponentModel;
+using MahApps.Metro.Controls.Dialogs;
 
 namespace ASTools.UI;
 public class Command
@@ -20,6 +21,30 @@ public class Command
     }
 }
 
+public class Error : INotifyPropertyChanged
+{
+    private string _text = string.Empty;
+    public string Text 
+    {
+        get { return _text;} 
+        set
+        {
+            if (_text != value)
+            {
+                _text = value;
+                OnPropertyChanged(nameof(Text));
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+
 public partial class App : Application
 {
     public static Process ASToolsProcess {get; private set;} = null!;
@@ -34,12 +59,41 @@ public partial class App : Application
         CreateNoWindow = true
     }; 
     public static Command Arguments {get; private set;} = null!;
+    private readonly Thread? _astoolsMonitorErrorsThread;
     
+    private static ErrorWindow? _errorWindow;
+
     public App()
     {
-        ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");  
+        // Start ASTools.Core process
+        ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
+        
+        // Start a thread to monitor ASTools.Core errors
+        _astoolsMonitorErrorsThread = new(ASToolsMonitorErrors); 
+        _astoolsMonitorErrorsThread.Start(); 
     }
-    
+
+    private static void ASToolsMonitorErrors()
+    {
+        do
+        {
+            string? errorLine = ASToolsProcess.StandardError.ReadLine();
+
+            if (!string.IsNullOrEmpty(errorLine))
+            {
+                Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        if (_errorWindow != null && _errorWindow.OnScreen) _errorWindow.AddMessage(errorLine);
+                        else 
+                        {
+                            _errorWindow = new();
+                            _errorWindow.AddMessage(errorLine);
+                            _errorWindow.Show();
+                        }
+                    });
+            }
+        } while (!ASToolsProcess.HasExited);
+    }
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -70,13 +124,15 @@ public partial class App : Application
     }
     private void App_Exit(object sender, ExitEventArgs e)
     {
-        ASToolsClose();
+        ASToolsClose();        
     } 
-    private static void ASToolsClose()
+    private void ASToolsClose()
     {
         ASToolsProcess.StandardInput?.Close();
 
         ASToolsProcess?.Kill();
+
+        _astoolsMonitorErrorsThread?.Join();
     }
     public static List<string> ASToolsSendCommand(string command)
     {

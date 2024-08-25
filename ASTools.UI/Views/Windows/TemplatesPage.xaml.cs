@@ -10,7 +10,6 @@ namespace ASTools.UI;
 public partial class TemplatesPage : Page
 {
     public ObservableCollection<TemplateDataModel> TemplatesList { get; set; } = [];
-    private TemplateDataModel? _selectedTemplate;
     public ObservableCollection<KeywordDataModel> KeywordsList { get; set; } = [];       
     
     public TemplatesPage()
@@ -47,10 +46,15 @@ public partial class TemplatesPage : Page
         if (templatesListGrid.Items.Count > 0)
             templatesListGrid.SelectedIndex = 0;
     }
-    private void LoadKeywordsList(string templatePath)
+    private static void LoadTemplate(string templatePath)
     {        
         // Send command
-        var answer = App.ASToolsSendCommand($"templates --selected {templatePath} --k-list");
+        App.ASToolsSendCommand($"templates --load \"{templatePath}\"");
+    }
+    private void LoadKeywordsList()
+    {        
+        // Send command
+        var answer = App.ASToolsSendCommand($"templates --k-list");
 
         // Fill KeywordsList with new values
         KeywordsList.Clear(); 
@@ -65,15 +69,18 @@ public partial class TemplatesPage : Page
     {
         if (templatesListGrid.SelectedItem == null) return;
         
-        // Save selected template for future uses
-        _selectedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
+        // Save loaded template for future uses
+        var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
 
-        // Load keywords of selected template
-        LoadKeywordsList(_selectedTemplate.Path);        
+        // Load selected template
+        LoadTemplate(loadedTemplate.Path);
+
+        // Load keywords
+        LoadKeywordsList();        
     }
     private void KeywordsList_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Add || e.NewItems == null) return;
+        if (e.Action != NotifyCollectionChangedAction.Add || e.NewItems == null) return;
         
         // Link each keyword in the list to the ValueChanged event. This is used to trigger the change value event
         foreach (var newItem in e.NewItems)
@@ -90,31 +97,27 @@ public partial class TemplatesPage : Page
         // A value is changed in a keyword. Check if is possible to enable Execute button
         CheckExecuteButtonEnable();
     }
-    private static void KeywordSendValueToASTools(TemplateDataModel template, KeywordDataModel keyword)
+    private static void KeywordSendValueToASTools(KeywordDataModel keyword)
     {
         // Send command
-        App.ASToolsSendCommand($"templates --selected \"{template.Path}\" --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");                   
+        App.ASToolsSendCommand($"templates --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");                   
     }
     private void CheckExecuteButtonEnable()
     {
         // Execute button is enabled only if all keywords are filled.
-        executeButton.IsEnabled = KeywordsList.All(_ => _.Value != null && _.Value != string.Empty);
+        executeButton.IsEnabled = KeywordsList.All(_ => _.Value != null && _.Value != string.Empty)
+                                    && !string.IsNullOrEmpty(workingDirectoryTextBox.Text);
     }
     private void ExecuteButton_Click(object sender, RoutedEventArgs e)
     {
-        // Execute command can be sent only if a template was selected and a working directory is available
-        if (_selectedTemplate == null) throw new Exception($"No template selected");
-        if (workingDirectoryTextBox.Text == null) throw new Exception($"No working directory");
-
         // Send keywords
         foreach (var keyword in KeywordsList)
-            KeywordSendValueToASTools(_selectedTemplate,keyword);
+            KeywordSendValueToASTools(keyword);
         
         // Send execute
-        App.ASToolsSendCommand($"templates --selected \"{_selectedTemplate.Path}\" --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");                   
+        App.ASToolsSendCommand($"templates --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");                   
         
-        // Clean keywords on seleced template in order to prevent unintentional multiple executions
-        App.ASToolsSendCommand($"templates --selected \"{_selectedTemplate.Path}\" --k-clean");                   
+        // Keywords are automatically resetted by ASTools.Core process                
         foreach (var keyword in KeywordsList)
             keyword.Value = string.Empty;
     }

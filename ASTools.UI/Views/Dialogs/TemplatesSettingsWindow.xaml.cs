@@ -61,7 +61,7 @@ public partial class TemplatesSettingsWindow : MetroWindow
         var dataItem = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
         
         // Send remove command
-        App.ASToolsSendCommand($"templates --repo-remove {dataItem.Path}");
+        App.ASToolsSendCommand($"templates --repo-remove \"{dataItem.Path}\"");
 
         // Reload repositories list
         LoadRepositoriesList();  
@@ -72,7 +72,7 @@ public partial class TemplatesSettingsWindow : MetroWindow
     private void NewButton_Click(object sender, RoutedEventArgs e)
     {        
         // Send add command
-        App.ASToolsSendCommand($"templates --repo-add {selectedRepositoryPath.Text}");
+        App.ASToolsSendCommand($"templates --repo-add \"{selectedRepositoryPath.Text}\"");
 
         // Reload repositories list
         LoadRepositoriesList();   

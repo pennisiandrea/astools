@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ASTOOLS">
     <Grid>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
@@ -14,31 +15,55 @@
 
         <Button Grid.Row="0" 
                 Grid.Column="0" 
-                Content="Templates" 
-                FontSize="24" 
-                Margin="30" 
-                Click="Button_Template_Click"/>
+                Click="Button_Template_Click"
+                Margin="30"
+                FontSize="20"
+                BorderThickness="0"
+                Background="Transparent">                
+                <StackPanel Orientation="Vertical">
+                        <Image Source="../../Resources/Templates.png" Stretch="Uniform"/>
+                        <TextBlock Text="Templates" HorizontalAlignment="Center"/>
+                </StackPanel>
+        </Button>
         
         <Button Grid.Row="0" 
                 Grid.Column="1" 
-                Content="ToDo1" 
-                FontSize="24" 
+                FontSize="20" 
                 Margin="30" 
-                IsEnabled="False"/>
+                BorderThickness="0"
+                Background="Transparent"
+                IsEnabled="False">                
+                <StackPanel Orientation="Vertical">
+                        <Image Source="../../Resources/QuestionMark.png" Stretch="Uniform"/>
+                        <TextBlock Text="Undefined" HorizontalAlignment="Center"/>
+                </StackPanel>
+        </Button>
         
         <Button Grid.Row="1" 
-                Grid.Column="0" 
-                Content="ToDo2" 
-                FontSize="24" 
+                Grid.Column="0"  
+                FontSize="20" 
                 Margin="30" 
-                IsEnabled="False"/>
+                BorderThickness="0"
+                Background="Transparent"
+                IsEnabled="False">                
+                <StackPanel Orientation="Vertical">
+                        <Image Source="../../Resources/QuestionMark.png" Stretch="Uniform"/>
+                        <TextBlock Text="Undefined" HorizontalAlignment="Center"/>
+                </StackPanel>
+        </Button>
         
         <Button Grid.Row="1" 
                 Grid.Column="1" 
-                Content="ToDo3" 
-                FontSize="24" 
+                FontSize="20" 
                 Margin="30" 
-                IsEnabled="False"/>
+                BorderThickness="0"
+                Background="Transparent"
+                IsEnabled="False">                
+                <StackPanel Orientation="Vertical">
+                        <Image Source="../../Resources/QuestionMark.png" Stretch="Uniform"/>
+                        <TextBlock Text="Undefined" HorizontalAlignment="Center"/>
+                </StackPanel>
+        </Button>
 
     </Grid>
 </Page>

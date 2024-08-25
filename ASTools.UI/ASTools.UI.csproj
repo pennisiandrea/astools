@@ -6,10 +6,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <Resource Include="Resources\Templates.png" />
+    <Resource Include="Resources\QuestionMark.png" />
   </ItemGroup>
 </Project>
