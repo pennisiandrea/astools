@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template ID="StdModule">
+	<Keywords>
+		<Keyword ID="__module_name__"/>
+	</Keywords>
+
+	<Instructions>
+		<Instruction Type="Copy">
+			<Source Path="$TEMPLATE_PATH\__module_name__" Type="Package"/>
+			<Destination Path="$USER_PATH" />
+		</Instruction>
+
+	</Instructions>
+</Template>

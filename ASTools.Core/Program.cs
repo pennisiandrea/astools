@@ -147,18 +147,23 @@ namespace ASTools.Core
 
     partial class Program
     {
-        private const string InstallPathRegistryPath = "SOFTWARE\\ASTools\\";
-        private const string InstallPathRegistryKey = "InstallPath";
-        private const string ConfigFileName = "Config.ini";
+        private const string RegistryMainPath = "SOFTWARE\\ASTools\\";
+        private const string ConfigFileRegistryKey = "ConfigFile";
+        private const string LogErrorFileRegistryKey = "LogError";
         private const string EndOfCommandUI = ""; // An empty line is enough
         private static Templates? _templates;
         private static Template? _template;
         private static readonly string _configFilePath;
+        private static readonly string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
         private static bool _executionByUI = false;
 
         static Program()
         {
-            _configFilePath = Path.Combine(GetConfigFilePath(),ConfigFileName);
+            // Error handling
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            
+            _configFilePath = GetConfigFile();
+            _logErrorFilePath = GetLogErrorFilePath();
         }
 
         static void Main(string[] argv)
@@ -203,6 +208,7 @@ namespace ASTools.Core
                 }
                 catch (Exception e)
                 {                    
+                    LogException($"Core:{e.Message}",e.StackTrace);
                     Console.Error.WriteLine(e.Message);
                     Console.WriteLine(EndOfCommandUI);
                     listNewCmd.Clear();
@@ -210,6 +216,16 @@ namespace ASTools.Core
             }  
         }
         
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = (Exception)e.ExceptionObject;
+            LogException($"Core:{ex.Message}", ex.StackTrace);
+        }
+        private static void LogException(string message, string? stackTrace)
+        {
+            File.AppendAllText(_logErrorFilePath, $"{DateTime.Now}: {message}\n{stackTrace}\n");
+        }
+    
         static int ModeRunCommands(Command.Mode opts)
         {   
             if(opts.UI) _executionByUI = true;
@@ -217,24 +233,41 @@ namespace ASTools.Core
 
             return 0;
         }
-        private static string GetConfigFilePath()
+        private static string GetLogErrorFilePath()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
             
             string? configFilePath;
-            RegistryKey? key = Registry.LocalMachine.OpenSubKey(InstallPathRegistryPath);
+            RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
             if (key != null)
             {
-                var keyValue = key.GetValue(InstallPathRegistryKey);
+                var keyValue = key.GetValue(LogErrorFileRegistryKey);
                 if (keyValue == null || keyValue is not string) 
-                    throw new Exception($"Invalid value on registry key {InstallPathRegistryPath}\\{InstallPathRegistryKey}");
+                    throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{LogErrorFileRegistryKey}");
                 configFilePath = (string)keyValue;
             }
-            else throw new Exception($"Registry path {InstallPathRegistryPath} not valid");
-            if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {InstallPathRegistryPath}\\{InstallPathRegistryKey}");
+            else throw new Exception($"Registry path {RegistryMainPath} not valid");
+            if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{LogErrorFileRegistryKey}");
             return configFilePath;
         }
-
+        private static string GetConfigFile()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
+            
+            string? configFilePath;
+            RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
+            if (key != null)
+            {
+                var keyValue = key.GetValue(ConfigFileRegistryKey);
+                if (keyValue == null || keyValue is not string) 
+                    throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{ConfigFileRegistryKey}");
+                configFilePath = (string)keyValue;
+            }
+            else throw new Exception($"Registry path {RegistryMainPath} not valid");
+            if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{ConfigFileRegistryKey}");
+            return configFilePath;
+        }
+        
         // Templates - General
         static int TemplatesRunCommands(Command.Templates opts)
         {

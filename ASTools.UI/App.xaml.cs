@@ -2,7 +2,10 @@
 using System.Diagnostics;
 using CommandLine;
 using System.ComponentModel;
-using MahApps.Metro.Controls.Dialogs;
+using System.Windows.Threading;
+using System.IO;
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace ASTools.UI;
 public class Command
@@ -47,6 +50,9 @@ public class Error : INotifyPropertyChanged
 
 public partial class App : Application
 {
+    private const string RegistryMainPath = "SOFTWARE\\ASTools\\";
+    private const string LogErrorFileRegistryKey = "LogError";
+    private const string CorePathRegistryKey = "CorePath";
     public static Process ASToolsProcess {get; private set;} = null!;
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
@@ -59,51 +65,87 @@ public partial class App : Application
         CreateNoWindow = true
     }; 
     public static Command Arguments {get; private set;} = null!;
-    private readonly Thread? _astoolsMonitorErrorsThread;
-    
+    private Thread? _astoolsMonitorErrorsThread;
+    private static string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
     private static ErrorWindow? _errorWindow;
 
-    public App()
+    protected override void OnStartup(StartupEventArgs e)
     {
+        base.OnStartup(e);
+
+        // Error handling
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        DispatcherUnhandledException += Application_DispatcherUnhandledException;
+
+        // Retrieve logError file path from windows registry
+        _logErrorFilePath = GetLogErrorFilePath();        
+
+        // Retrieve corePath from windows registry
+        _astoolsProcessStartInfo.FileName = GetCorePath();   
+
         // Start ASTools.Core process
         ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
         
         // Start a thread to monitor ASTools.Core errors
         _astoolsMonitorErrorsThread = new(ASToolsMonitorErrors); 
         _astoolsMonitorErrorsThread.Start(); 
-    }
-
-    private static void ASToolsMonitorErrors()
-    {
-        do
-        {
-            string? errorLine = ASToolsProcess.StandardError.ReadLine();
-
-            if (!string.IsNullOrEmpty(errorLine))
-            {
-                Application.Current.Dispatcher.Invoke(() => 
-                    {
-                        if (_errorWindow != null && _errorWindow.OnScreen) _errorWindow.AddMessage(errorLine);
-                        else 
-                        {
-                            _errorWindow = new();
-                            _errorWindow.AddMessage(errorLine);
-                            _errorWindow.Show();
-                        }
-                    });
-            }
-        } while (!ASToolsProcess.HasExited);
-    }
-    protected override void OnStartup(StartupEventArgs e)
-    {
-        base.OnStartup(e);
 
         this.Exit += new ExitEventHandler(App_Exit);
-        
+
         Parser.Default.ParseArguments<Command>(e.Args)
                     .WithParsed<Command>(opts => {Arguments = opts;});
 
         OpenStartupPage();
+    }
+    private static string GetLogErrorFilePath()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
+        
+        string? configFilePath;
+        RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
+        if (key != null)
+        {
+            var keyValue = key.GetValue(LogErrorFileRegistryKey);
+            if (keyValue == null || keyValue is not string) 
+                throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{LogErrorFileRegistryKey}");
+            configFilePath = (string)keyValue;
+        }
+        else throw new Exception($"Registry path {RegistryMainPath} not valid");
+        if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{LogErrorFileRegistryKey}");
+        return configFilePath;
+    }
+    private static string GetCorePath()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
+        
+        string? configFilePath;
+        RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
+        if (key != null)
+        {
+            var keyValue = key.GetValue(CorePathRegistryKey);
+            if (keyValue == null || keyValue is not string) 
+                throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{CorePathRegistryKey}");
+            configFilePath = (string)keyValue;
+        }
+        else throw new Exception($"Registry path {RegistryMainPath} not valid");
+        if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{CorePathRegistryKey}");
+        return configFilePath;
+    }
+    private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        LogException($"UI:{e.Exception.Message}", e.Exception.StackTrace);
+        e.Handled = true;
+        SendErrorToErrorWindow(e.Exception.Message);
+    }
+    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var ex = (Exception)e.ExceptionObject;
+        LogException($"UI:{ex.Message}", ex.StackTrace);
+        SendErrorToErrorWindow(ex.Message);
+    }
+    private static void LogException(string message, string? stackTrace)
+    {
+        File.AppendAllText(_logErrorFilePath, $"{DateTime.Now}: {message}\n{stackTrace}\n");
     }
     private static void OpenStartupPage ()
     {
@@ -154,5 +196,32 @@ public partial class App : Application
         
         return answer;
     }
+    private static void ASToolsMonitorErrors()
+    {
+        do
+        {
+            string? errorLine = ASToolsProcess.StandardError.ReadLine();
+
+            if (!string.IsNullOrEmpty(errorLine))
+            {
+                Application.Current.Dispatcher.Invoke(() => 
+                {
+                    //LogException($"Core:{errorLine}"); Core errors will be monitored by Core
+                    SendErrorToErrorWindow(errorLine);
+                });
+            }
+        } while (!ASToolsProcess.HasExited);
+    }
+    private static void SendErrorToErrorWindow(string errorMessage)
+    {
+        if (_errorWindow != null && _errorWindow.OnScreen) _errorWindow.AddMessage(errorMessage);
+        else 
+        {
+            _errorWindow = new();
+            _errorWindow.AddMessage(errorMessage);
+            _errorWindow.Show();
+        }
+    }
+    
 }
 
