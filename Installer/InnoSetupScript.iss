@@ -32,12 +32,12 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "C:\Data\astools\ASTools.Core\bin\Release\net8.0\win-x64\*"; DestDir: "{app}\ASTools.Core"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Data\astools\ASTools.UI\bin\Release\net8.0-windows\win-x64\*"; DestDir: "{app}\ASTools.UI"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Data\astools\Data\ASTemplates\Default\*"; DestDir: "{sd}\ASTools\ASTemplates\Default"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Data\astools\Data\Config.ini"; DestDir: "{sd}\ASTools"; Flags: ignoreversion; Check: not FileExists('{sd}\ASTools\Config.ini')
+Source: "C:\Data\astools\Data\ASTemplates\Default\*"; DestDir: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Data\astools\Data\Config.ini"; DestDir: "{commonappdata}\ASTools"; Flags: ignoreversion onlyifdoesntexist
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [INI]
-Filename: "{sd}\ASTools\Config.ini"; Section: "Templates"; Key: "Repository1"; String: "{sd}\ASTools\ASTemplates\Default"; Check: not FileExists('{sd}\ASTools\Config.ini')
+Filename: "{commonappdata}\ASTools\Config.ini"; Section: "Templates"; Key: "Repository1"; String: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: createkeyifdoesntexist
 
 [Registry]
 ;Registry data from file RegistryKeys.reg
@@ -47,8 +47,8 @@ Root: HKA; Subkey: "Software\Classes\Directory\background\shell\ASTemplates"; Va
 Root: HKA; Subkey: "Software\Classes\Directory\background\shell\ASTemplates\command"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\Directory\background\shell\ASTemplates\command"; ValueType: string; ValueName: ""; ValueData: """{app}\ASTools.UI\ASTools.UI.exe"" ""--page"" ""templates"" ""--working-dir"" ""%V"""; Flags: uninsdeletevalue
 Root: HKLM; Subkey: "SOFTWARE\ASTools"; Flags: uninsdeletekey; Check: Is64BitInstallMode
-Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "ConfigFile"; ValueData: "{sd}\ASTools\Config.ini"; Flags: uninsdeletevalue; Check: Is64BitInstallMode
-Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "LogError"; ValueData: "{sd}\ASTools\Errors.log"; Flags: uninsdeletevalue; Check: Is64BitInstallMode
+Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "ConfigFile"; ValueData: "{commonappdata}\ASTools\Config.ini"; Flags: uninsdeletevalue; Check: Is64BitInstallMode
+Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "LogError"; ValueData: "{commonappdata}\ASTools\Errors.log"; Flags: uninsdeletevalue; Check: Is64BitInstallMode
 Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "CorePath"; ValueData: "{app}\ASTools.Core\ASTools.Core.exe"; Flags: uninsdeletevalue; Check: Is64BitInstallMode
 ;End of registry data from file RegistryKeys.reg
 

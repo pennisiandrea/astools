@@ -1,3 +1,4 @@
+using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -150,9 +151,12 @@ namespace ASTools.Core.Tools.Templates
                 if (Directory.Exists(path))
                 {
                     DirectoryInfo dir = new(path);
-
+                    
                     foreach (var template in dir.GetDirectories())
-                        _templatesList.Add(new TemplateListItem(id++,template.FullName,template.Name));    
+                    {
+                        if ((template.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                            _templatesList.Add(new TemplateListItem(id++,template.FullName,template.Name));    
+                    }
                 }            
             }
                         
