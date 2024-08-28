@@ -1,14 +1,12 @@
-﻿using ASTools.Core.Tools.Templates;
-using CommandLine;
+﻿using CommandLine;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
-using ConsoleTables;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ASTools.Core
 {
-    class Command
+    public class Command
     {
         [Verb("mode", HelpText = "Toggle presentation mode")]
         public class Mode
@@ -24,8 +22,10 @@ namespace ASTools.Core
         [Verb("templates", HelpText = "Send command to Templates module")]
         public class Templates 
         {      
-            [Option("load", Default = null, HelpText = "Load a very specific template providing the path")]
+            [Option("load-template", Default = null, HelpText = "Load a very specific template providing the name of the template")]
             public string? LoadTemplate { get; set; }
+            [Option("load-template-repo", Default = null, HelpText = "Load a very specific template providing the name of the repository")]
+            public string? LoadTemplateRepo { get; set; }
             [Option("loaded", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the path of the loaded template")]
             public bool LoadedTemplate { get; set; }
             [Option("unload", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Unload the loaded template")]
@@ -34,9 +34,11 @@ namespace ASTools.Core
             // Templates repositories commands
             [Option("repo-list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the list of templates repositories")]
             public bool RepositoriesList { get; set; }
-            [Option("repo-add", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Add a repository to templates repositories")]
+            [Option("repo-add", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Name of the repository to add")]
             public string? RepositoryAdd { get; set; }
-            [Option("repo-remove", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Remove a repository from templates repositories")]
+            [Option("repo-add-path", Default = null, HelpText = "Path of the Repository to add")]
+            public string? RepositoryAddPath { get; set; }
+            [Option("repo-remove", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Remove a repository by name")]
             public string? RepositoryRemove { get; set; }
 
             // Templates list command
@@ -59,33 +61,6 @@ namespace ASTools.Core
             [Option("k-clean", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Clean recorded keywords")]
             public bool KeywordsClean { get; set; }
 
-            // ToString override
-            public override string ToString()
-            {
-                var str = "";
-
-                if (TemplatesList) str += "\nTemplate list command";
-                else if (LoadedTemplate) str += "\nLoaded template command";
-                else if (UnloadTemplate) str += "\nUnload template command";
-                else if (Exec)
-                {
-                    str += $"\nExecute command";
-                    str += $"\n\tWorking directory: {ExecWorkingDir}";
-                }
-                else if (KeywordsList)
-                {
-                    str += "\nKeywords list command";
-                }
-                else if (KeywordInsertName != null)
-                {
-                    str += "\nKeyword insert command";
-                    str += $"\n\tKeyword name: {KeywordInsertName}";
-                    str += $"\n\tKeyword value: {KeywordInsertValue}";
-                }
-                if (LoadTemplate != null) str += $"\nTemplate to load: {LoadTemplate}";
-
-                return str;
-            }
         }
 
         [Verb("exit", HelpText = "Exit command")]
@@ -151,37 +126,55 @@ namespace ASTools.Core
         private const string ConfigFileRegistryKey = "ConfigFile";
         private const string LogErrorFileRegistryKey = "LogError";
         private const string EndOfCommandUI = ""; // An empty line is enough
-        private static Templates? _templates;
-        private static Template? _template;
-        private static readonly string _configFilePath;
-        private static readonly string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
+        private static string _configFilePath = "";
+        private static string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
         private static bool _executionByUI = false;
 
         static Program()
         {
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            
-            _configFilePath = GetConfigFile();
-            _logErrorFilePath = GetLogErrorFilePath();
         }
 
         static void Main(string[] argv)
         {         
+            _configFilePath = GetStringKeyFromRegistry(RegistryMainPath,ConfigFileRegistryKey);
+            _logErrorFilePath = GetStringKeyFromRegistry(RegistryMainPath,LogErrorFileRegistryKey);
+
+            Tools.Templates.Logic TemplatesLogic = new(_configFilePath); 
+
             string? newCmd;
             List<string> listNewCmd = [.. argv];
             while (true) // infinite loop
             {
                 try
                 {
+                    // Parse & execute coming commands
                     if (listNewCmd.Count > 0)
                     {
-                        Parser.Default.ParseArguments<Command.Mode,Command.Templates,Command.Exit>(listNewCmd)
-                            .WithParsed<Command.Mode>(opts => ModeRunCommands(opts))
-                            .WithParsed<Command.Templates>(opts => TemplatesRunCommands(opts))
-                            .WithParsed<Command.Exit>(_ => Environment.Exit(0));
+                        var parsedCommands = Parser.Default.ParseArguments<Command.Mode,Command.Templates,Command.Exit>(listNewCmd)
+                                                .MapResult(
+                                                    (Command.Mode opts) => (object)opts,
+                                                    (Command.Templates opts) => (object)opts,
+                                                    (Command.Exit opts) => (object)opts,
+                                                    errs => throw new Exception($"Error parsing command"));
+
+                        if (parsedCommands is Command.Mode modeCommand)
+                        {
+                            ModeRunCommands(modeCommand);
+                        }
+                        else if(parsedCommands is Command.Templates templatesCommand)
+                        {
+                            TemplatesLogic.Execute(templatesCommand,_executionByUI);
+                            if (_executionByUI) Console.WriteLine(EndOfCommandUI); // Handshake Core-UI "end of command"
+                        }
+                        else if(parsedCommands is Command.Exit exitCommand)
+                        {
+                            Environment.Exit(0);
+                        }
                     }
                     
+                    // Print the new line 
                     if (!_executionByUI)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -193,18 +186,18 @@ namespace ASTools.Core
                         newCmd = Console.ReadLine();
                     } while (string.IsNullOrEmpty(newCmd));
 
+                    // Prepare new commands for the parsing on the next cycle
                     listNewCmd.Clear();
-
                     #pragma warning disable // Because the following code generates an useless advice
                     var matches = Regex.Matches(newCmd, "\"(.*?)\"|\\S+");
                     #pragma warning restore
-
                     foreach (Match match in matches.Cast<Match>())
                     {
-                        // Se la parola è tra virgolette, rimuovi le virgolette
+                        // Remove escape chars and double \\
                         string word = match.Value.Trim('\"').Replace("\\\\","\\");
                         listNewCmd.Add(word);
-                    }    
+                    }   
+                     
                 }
                 catch (Exception e)
                 {                    
@@ -233,264 +226,23 @@ namespace ASTools.Core
 
             return 0;
         }
-        private static string GetLogErrorFilePath()
+        private static string GetStringKeyFromRegistry(string registryPath, string registryKey)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
             
-            string? configFilePath;
-            RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
+            string? stringKeyValue;
+            RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath);
             if (key != null)
             {
-                var keyValue = key.GetValue(LogErrorFileRegistryKey);
+                var keyValue = key.GetValue(registryKey);
                 if (keyValue == null || keyValue is not string) 
-                    throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{LogErrorFileRegistryKey}");
-                configFilePath = (string)keyValue;
+                    throw new Exception($"Invalid value on registry key {registryPath}\\{registryKey}");
+                stringKeyValue = (string)keyValue;
             }
-            else throw new Exception($"Registry path {RegistryMainPath} not valid");
-            if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{LogErrorFileRegistryKey}");
-            return configFilePath;
+            else throw new Exception($"Registry path {registryPath} not valid");
+            if (stringKeyValue == null) throw new Exception($"Cannot retrieve value from registry: {registryPath}\\{registryKey}");
+            return stringKeyValue;
         }
-        private static string GetConfigFile()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
-            
-            string? configFilePath;
-            RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
-            if (key != null)
-            {
-                var keyValue = key.GetValue(ConfigFileRegistryKey);
-                if (keyValue == null || keyValue is not string) 
-                    throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{ConfigFileRegistryKey}");
-                configFilePath = (string)keyValue;
-            }
-            else throw new Exception($"Registry path {RegistryMainPath} not valid");
-            if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{ConfigFileRegistryKey}");
-            return configFilePath;
-        }
-        
-        // Templates - General
-        static int TemplatesRunCommands(Command.Templates opts)
-        {
-            TemplatesCheckCommand(opts);
-            
-            if(_executionByUI) TemplatesUICommands(opts);
-            else TemplatesConsoleCommands(opts);
-
-            return 0;
-        }
-        static void TemplatesCheckCommand(Command.Templates opts)
-        {
-            // Check all invalid combinations of options
-
-            // 1. 
-            if (opts == null) throw new Exception($"Invalid options combination");
-
-        }
-        static void TemplatesCommandRepositoryAdd(string repository)
-        {
-            _templates ??= new(_configFilePath);
-            
-            _templates.AddRepository(repository); 
-        }
-        static void TemplatesCommandRepositoryRemove(string repository)
-        {
-            _templates ??= new(_configFilePath);
-            _templates.RemoveRepository(repository);  
-        }
-        static void TemplatesCommandKeywordInsert(string name, string? value)
-        {
-            if (_template == null) throw new Exception($"No template loaded"); 
-            if (name == null) throw new Exception($"No keyword name provided");
-            if (value == null) throw new Exception($"No keyword value provided");
-                                                       
-            _template.SetKeywordValue(new TemplateConfigClass.KeywordClass(){ID = name,Value = value});               
-        }
-        static void TemplatesCommandKeywordClean()
-        {
-            if (_template == null) throw new Exception($"No template loaded");  
-            
-            _template.ResetKeywordsValues();            
-        }
-        static void TemplatesCommandLoadTemplate(string templatePath)
-        {
-            // Create a complete new instance of _template.
-            try
-            {
-                _template = new(templatePath);
-            }
-            catch (Exception)
-            {
-                _template = null; // In case of error delete previously created _template instances
-                throw;
-            }
-        }
-        static void TemplatesCommandLoadedTemplate()
-        {
-            if (_template != null) Console.WriteLine($"{_template.TemplatePath}"); 
-            else throw new Exception($"No template loaded");                
-        }
-        static void TemplatesCommandUnloadTemplate()
-        {
-            _template = null;
-        }
-        
-        // Templates - Console
-        static void TemplatesConsoleCommands(Command.Templates opts)
-        {
-            //Commands typ 1
-            if (opts.LoadTemplate != null) TemplatesCommandLoadTemplate(opts.LoadTemplate);    
-
-            //Commands typ 2
-            if (opts.TemplatesList) TemplatesConsoleCommandTemplatesList();    
-            else if (opts.LoadedTemplate) TemplatesCommandLoadedTemplate();   
-            else if (opts.UnloadTemplate) TemplatesCommandUnloadTemplate();          
-            else if (opts.Exec) TemplatesConsoleCommandExec(opts.ExecWorkingDir);          
-            else if (opts.KeywordsList) TemplatesConsoleCommandKeywordsList();  
-            else if (opts.KeywordInsertName != null) TemplatesCommandKeywordInsert(opts.KeywordInsertName, opts.KeywordInsertValue); 
-            else if (opts.KeywordsClean) TemplatesCommandKeywordClean(); 
-            else if (opts.RepositoriesList) TemplatesConsoleCommandRepositoriesList(); 
-            else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
-            else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 
-                  
-        }
-        static void TemplatesConsoleCommandTemplatesList()
-        {
-            _templates ??= new(_configFilePath);
-
-            _templates.UpdateTemplatesList();
-            
-            TemplatesConsoleWriteTemplatesList(_templates.TemplatesList);              
-        }
-        static void TemplatesConsoleWriteTemplatesList(List<Templates.TemplateListItem> list)
-        {
-            var table = new ConsoleTable("ID", "Name", "Path");
-            
-            if (list != null)
-                foreach (var template in list)
-                    table.AddRow(template.ID,template.Name,template.Path);                     
-
-            table.Write(Format.Minimal); 
-        }
-        static void TemplatesConsoleCommandRepositoriesList()
-        {
-            _templates ??= new(_configFilePath);  
-            var table = new ConsoleTable("Path");
-            
-            if (_templates.Repositories != null)
-                foreach (var repository in _templates.Repositories)
-                    table.AddRow(repository);                     
-
-            table.Write(Format.Minimal);              
-        }
-        static void TemplatesConsoleCommandExec(string? execWorkingDir)
-        {   
-            if (execWorkingDir == null) throw new Exception($"No working path provided");
-
-            if (_template == null) // If no template is loaded, present the list to the user and wait a choice
-            {
-                _templates ??= new(_configFilePath);
-
-                _templates.UpdateTemplatesList();
-
-                TemplatesConsoleWriteTemplatesList(_templates.TemplatesList);
-
-                int selectedTemplateId;
-                bool userInputValid;
-                do
-                {
-                    Console.Write("Please, select a template by ID:");
-                    string? userInput = Console.ReadLine();
-                    userInputValid = int.TryParse(userInput,out selectedTemplateId);
-                } while (!userInputValid || !_templates.TemplatesList.Any(_ => _.ID == selectedTemplateId));
-
-                var templatePath = _templates.TemplatesList.First(_ => _.ID == selectedTemplateId).Path;
-                    
-                _template = new(templatePath);
-            }
-
-            if(!_template.KeywordsReady && _template.Config.Keywords != null) // Ask user to input keywords
-            {
-                foreach (var keyword in _template.Config.Keywords)
-                {
-                    do
-                    {
-                        Console.Write($"Please, insert the keyword value of {keyword.ID}:");
-                        keyword.Value = Console.ReadLine();    
-                    } while(keyword.Value == null);                    
-                    _template.SetKeywordValue(keyword);
-                }
-            }
-
-            _template.Execute(execWorkingDir);  
-            _template.ResetKeywordsValues(); // This prevents undesired repetitions          
-        }
-        static void TemplatesConsoleCommandKeywordsList()
-        {
-            if (_template == null) throw new Exception($"No template loaded");  
-            
-            var table = new ConsoleTable("ID", "Value");
-            
-            if (_template.Config.Keywords != null)
-                foreach (var keyword in _template.Config.Keywords)
-                    table.AddRow(keyword.ID,keyword.Value);                     
-
-            table.Write(Format.Minimal);              
-        }
-        
-        // Templates - UI
-        static void TemplatesUICommands(Command.Templates opts)
-        {
-            //Commands typ 1
-            if (opts.LoadTemplate != null) TemplatesCommandLoadTemplate(opts.LoadTemplate);  
-
-            //Commands typ 2
-            if (opts.TemplatesList) TemplatesUICommandTemplatesList();   
-            else if (opts.LoadedTemplate) TemplatesCommandLoadedTemplate();   
-            else if (opts.UnloadTemplate) TemplatesCommandUnloadTemplate();   
-            else if (opts.Exec) TemplatesUICommandExec(opts.ExecWorkingDir);    
-            else if (opts.KeywordsList) TemplatesUICommandKeywordsList(); 
-            else if (opts.KeywordInsertName != null) TemplatesCommandKeywordInsert(opts.KeywordInsertName, opts.KeywordInsertValue);    
-            else if (opts.KeywordsClean) TemplatesCommandKeywordClean(); 
-            else if (opts.RepositoriesList) TemplatesUICommandRepositoriesList();    
-            else if (opts.RepositoryAdd != null) TemplatesCommandRepositoryAdd(opts.RepositoryAdd); 
-            else if (opts.RepositoryRemove != null) TemplatesCommandRepositoryRemove(opts.RepositoryRemove); 
-            
-            Console.WriteLine(EndOfCommandUI);            
-        }
-        static void TemplatesUICommandTemplatesList()
-        {
-            _templates ??= new(_configFilePath);
-
-            _templates.UpdateTemplatesList();
-            
-            if (_templates.TemplatesList != null)
-                foreach (var template in _templates.TemplatesList)
-                    Console.WriteLine($"{template.ID}|{template.Name}|{template.Path}");     
-        }
-        static void TemplatesUICommandRepositoriesList()
-        {
-            _templates ??= new(_configFilePath);  
-            
-            foreach (var repository in _templates.Repositories)
-                Console.WriteLine(repository);  
-        }
-        static void TemplatesUICommandExec(string? execWorkingDir)
-        {
-            if (_template == null) throw new Exception($"No template loaded");  
-            if (!_template.Ready) throw new Exception($"Template not ready to be installed");
-            if (execWorkingDir == null) throw new Exception($"No working path provided");
-
-            _template.Execute(execWorkingDir);  
-            _template.ResetKeywordsValues(); // This prevents undesired repetitions                 
-        }
-        static void TemplatesUICommandKeywordsList()
-        {
-            if (_template == null) throw new Exception($"No template loaded"); 
-              
-            if (_template.Config.Keywords != null)
-                foreach (var keyword in _template.Config.Keywords)
-                    Console.WriteLine($"{keyword.ID}|{keyword.Value}");                        
-        }
-
+    
     }
 }

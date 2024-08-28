@@ -31,8 +31,12 @@ public partial class TemplatesSettingsWindow : MetroWindow
         // Fill RepositoriesList with new values
         RepositoriesList.Clear(); 
         foreach (var line in answer)
-            RepositoriesList.Add(new RepositoryDataModel{Path = line});
-             
+        {
+            var parts = line.Split('|'); // Each line is RepositoryName|RepositoryPath
+            if (parts.Length >= 2)
+                RepositoriesList.Add(new RepositoryDataModel { Name = parts[0].Trim(),Path = parts[1].Trim()});
+        }
+
         // Select first element
         if (repositoriesListGrid.Items.Count > 0)
             repositoriesListGrid.SelectedIndex = 0;   
@@ -50,7 +54,8 @@ public partial class TemplatesSettingsWindow : MetroWindow
         // Get selected repository
         var dataItem = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
         
-        // Put its path to the editing text box
+        // Put its data to the editing text boxes
+        selectedRepositoryName.Text = dataItem.Name;
         selectedRepositoryPath.Text = dataItem.Path;
     }
     private void RemoveButton_Click(object sender, RoutedEventArgs e)
@@ -61,7 +66,7 @@ public partial class TemplatesSettingsWindow : MetroWindow
         var dataItem = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
         
         // Send remove command
-        App.ASToolsSendCommand($"templates --repo-remove \"{dataItem.Path}\"");
+        App.ASToolsSendCommand($"templates --repo-remove \"{dataItem.Name}\"");
 
         // Reload repositories list
         LoadRepositoriesList();  
@@ -72,7 +77,7 @@ public partial class TemplatesSettingsWindow : MetroWindow
     private void NewButton_Click(object sender, RoutedEventArgs e)
     {        
         // Send add command
-        App.ASToolsSendCommand($"templates --repo-add \"{selectedRepositoryPath.Text}\"");
+        App.ASToolsSendCommand($"templates --repo-add \"{selectedRepositoryName.Text}\" --repo-add-path \"{selectedRepositoryPath.Text}\"");
 
         // Reload repositories list
         LoadRepositoriesList();   

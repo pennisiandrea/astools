@@ -16,53 +16,110 @@
         </Grid.RowDefinitions>
         
         <!-- Settings Button -->
-        <Button Name="settingsButton"
+        <Button 
+            Name="settingsButton"
+            Grid.Row="0"
+            HorizontalAlignment="Right"
+            Margin="0"
+            Width="40" 
+            Height="40"
+            BorderThickness="0"
+            Background="Transparent"
+            IsEnabled="True"
+            Click="SettingsButton_Click">
+                <Button.Content>
+                    <Image Source="../../Resources/Settings.png" Stretch="Uniform"/>
+                </Button.Content>
+        </Button>
+
+        <Button 
+            Name="homeButton"
+            Grid.Row="0"
+            HorizontalAlignment="left"
+            Margin="0"
+            Width="40" 
+            Height="40"
+            BorderThickness="0"
+            Background="Transparent"
+            IsEnabled="True"
+            Click="HomeButton_Click">
+                <Button.Content>
+                    <Image Source="../../Resources/Home.png" Stretch="Uniform"/>
+                </Button.Content>
+        </Button>
+
+        <Separator Grid.Row="1" Background="Black"/>
+
+        
+        <!-- Templates list -->                    
+        <Grid Grid.Row="2"> 
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock 
+                Text="Templates list" 
+                FontSize="16" 
+                Margin="0" 
                 Grid.Row="0"
-                Content="Settings"
-                HorizontalAlignment="Right"
-                Margin="10"
-                IsEnabled="True"
-                Click="SettingsButton_Click" />
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>  
 
-        <Button Name="homeButton"
-                Grid.Row="0"
-                Content="Home"
-                HorizontalAlignment="left"
-                Margin="10"
-                IsEnabled="True"
-                Click="HomeButton_Click" />
+            <DataGrid 
+                Name="templatesListGrid"
+                Grid.Row="1"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                SelectionMode="Single"
+                BorderThickness="0,1,0,0"
+                BorderBrush="LightGray"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Auto"
+                SelectionChanged="TemplatesListGrid_SelectionChanged"
+                Loaded="TemplatesListGrid_Loaded">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Repository" Width="4*" Binding="{Binding RepositoryName}" />
+                        <DataGridTextColumn Header="Name" Width="10*" Binding="{Binding Name}" />
+                    </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
 
-        <Separator Grid.Row="1"/>
-
-        <!-- Templates list -->
-        <DataGrid Name="templatesListGrid"
-                  Grid.Row="2"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  SelectionChanged="TemplatesListGrid_SelectionChanged"
-                  Loaded="TemplatesListGrid_Loaded">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
-                <DataGridTextColumn Header="Path" Width="2*" Binding="{Binding Path}" />
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <Separator Grid.Row="3"/>
+        <Separator Grid.Row="3" Background="Black"/>
 
         <!-- Keywords list -->
-        <DataGrid Name="keywordsListGrid"
-                  Grid.Row="4"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  SelectionMode="Single">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Keyword" Width="*" Binding="{Binding Keyword}" IsReadOnly="True" />
-                <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <Grid Grid.Row="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
         
-        <Separator Grid.Row="5"/>
+            <TextBlock 
+                Text="Keywords list" 
+                Grid.Row="0"
+                FontSize="16" 
+                Margin="0" 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>
+
+            <DataGrid 
+                Name="keywordsListGrid"  
+                Grid.Row="1"                  
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                SelectionMode="Single"
+                BorderThickness="0,1,0,0"
+                BorderBrush="LightGray"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Keyword" Width="*" Binding="{Binding Keyword}" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}" />
+                    </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+        
+        <Separator Grid.Row="5" Background="Black"/>
 
         <Grid Grid.Row="6">
             <Grid.ColumnDefinitions>
@@ -71,17 +128,25 @@
             </Grid.ColumnDefinitions>
 
             <!-- Working directory -->
-            <TextBox    Name="workingDirectoryTextBox"
-                        Grid.Column="0"
-                        Margin="10"/>
+            <TextBox    
+                Name="workingDirectoryTextBox"
+                Grid.Column="0"
+                Margin="10"/>
 
             <!-- Execute Button -->
-            <Button Name="executeButton"
-                    Grid.Column="1"
-                    Content="Execute"
-                    Margin="10"
-                    IsEnabled="False"
-                    Click="ExecuteButton_Click" />
+            <Button 
+                Name="executeButton"
+                Grid.Column="1"
+                Margin="5"
+                Width="40" 
+                Height="40"
+                BorderThickness="0"
+                Background="Transparent"
+                Click="ExecuteButton_Click">
+                    <Button.Content>
+                        <Image Source="../../Resources/Execute.png" Stretch="Uniform"/>
+                    </Button.Content>
+            </Button>
         </Grid>
         
     </Grid>

@@ -26,5 +26,8 @@
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <Resource Include="Resources\Templates.png" />
     <Resource Include="Resources\QuestionMark.png" />
+    <Resource Include="Resources\Settings.png" />
+    <Resource Include="Resources\Home.png" />
+    <Resource Include="Resources\Execute.png" />
   </ItemGroup>
 </Project>

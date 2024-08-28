@@ -37,7 +37,7 @@ Source: "C:\Data\astools\Data\Config.ini"; DestDir: "{commonappdata}\ASTools"; F
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [INI]
-Filename: "{commonappdata}\ASTools\Config.ini"; Section: "Templates"; Key: "Repository1"; String: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: createkeyifdoesntexist
+Filename: "{commonappdata}\ASTools\Config.ini"; Section: "Templates"; Key: "Repository1"; String: "Default|{commonappdata}\ASTools\ASTemplates\Default"; Flags: createkeyifdoesntexist
 
 [Registry]
 ;Registry data from file RegistryKeys.reg

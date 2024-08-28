@@ -12,42 +12,101 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        
-        <!-- Templates list -->
-        <DataGrid Name="repositoriesListGrid"
-                  Grid.Row="0"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  SelectionChanged="RepositoriesListGrid_SelectionChanged"
-                  Loaded="RepositoriesListGrid_Loaded">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Path" Width="*" Binding="{Binding Path}" />
-            </DataGrid.Columns>
-        </DataGrid>
+                
+        <!-- Repositories list -->
+        <Grid VerticalAlignment="Top" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock 
+                Text="Repositories list"  
+                Grid.Row="0"                       
+                FontSize="16" 
+                Margin="0" 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>
+
+            <DataGrid 
+                Name="repositoriesListGrid"
+                Grid.Row="1"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                SelectionMode="Single"
+                BorderThickness="0,1,0,0"
+                BorderBrush="LightGray"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Auto"
+                SelectionChanged="RepositoriesListGrid_SelectionChanged"
+                Loaded="RepositoriesListGrid_Loaded">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                        <DataGridTextColumn Header="Path" Width="2*" Binding="{Binding Path}" />
+                    </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
 
         <Separator Grid.Row="1"/>
 
+        <!-- selectedRepositoryName text box -->
+        <Grid Grid.Row="2" Margin = "5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50" /> 
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock 
+                Text="Name"     
+                Margin="0" 
+                Grid.Column="0"
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Left"/>
+
+            <TextBox    
+                Name="selectedRepositoryName"
+                Margin="0"
+                Grid.Column="1"
+                VerticalAlignment="Center"/>
+        </Grid>
+
         <!-- selectedRepositoryPath text box -->
-        <TextBox    Name="selectedRepositoryPath"
-                    Grid.Row="2"
-                    Margin="10"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Stretch"/>
+        <Grid Grid.Row="3" Margin = "5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50" /> 
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock 
+                Text="Path"     
+                Margin="0" 
+                Grid.Column="0"
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Left"/>
+
+            <TextBox    
+                Name="selectedRepositoryPath"
+                Margin="0"
+                Grid.Column="1"
+                VerticalAlignment="Center"/>
+        </Grid>
         
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left">
             <!-- Remove button -->
-            <Button Name="removeButton"
-                    Content="Remove"
-                    Margin="10"
-                    Click="RemoveButton_Click" />
+            <Button 
+                Name="removeButton"
+                Content="Remove"
+                Margin="10"
+                Click="RemoveButton_Click" />
 
             <!-- New button -->
-            <Button Name="newButton"
-                    Content="New"
-                    Margin="10"
-                    Click="NewButton_Click" />
+            <Button 
+                Name="newButton"
+                Content="New"
+                Margin="10"
+                Click="NewButton_Click" />
         </StackPanel>
     </Grid>
 </mah:MetroWindow>

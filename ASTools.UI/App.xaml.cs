@@ -56,7 +56,7 @@ public partial class App : Application
     public static Process ASToolsProcess {get; private set;} = null!;
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
-        FileName = "C:\\Data\\astools\\astools.core\\bin\\Debug\\net8.0\\ASTools.Core.exe",
+        FileName = "",
         Arguments = "mode --ui",
         RedirectStandardInput = true,
         RedirectStandardOutput = true,
@@ -66,70 +66,70 @@ public partial class App : Application
     }; 
     public static Command Arguments {get; private set;} = null!;
     private Thread? _astoolsMonitorErrorsThread;
-    private static string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
+    private static string _logErrorFilePath = "astools_error.log"; // Default path. It will change in OnStartup method
     private static ErrorWindow? _errorWindow;
-
+    public static bool AppStarted {get; private set;}
+    
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // Error handling
-        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-        DispatcherUnhandledException += Application_DispatcherUnhandledException;
+        this.Exit += new ExitEventHandler(App_Exit);
+        this.DispatcherUnhandledException += Application_DispatcherUnhandledException;
 
-        // Retrieve logError file path from windows registry
-        _logErrorFilePath = GetLogErrorFilePath();        
+        Thread appInitThread = new(() => 
+        {
+            // Retrieve logError file path from windows registry
+            _logErrorFilePath = GetStringKeyFromRegistry(RegistryMainPath,LogErrorFileRegistryKey);
 
-        // Retrieve corePath from windows registry
-        _astoolsProcessStartInfo.FileName = GetCorePath();   
+            // Error handling
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+                        
+            // Parse input arguments and open startup page
+            Parser.Default.ParseArguments<Command>(e.Args)
+                .WithParsed<Command>(opts => {Arguments = opts;});
+
+        });
+        appInitThread.Start();
 
         // Start ASTools.Core process
-        ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
+        Thread astoolsThread = new(() => 
+        {
+            // Retrieve corePath from windows registry
+            _astoolsProcessStartInfo.FileName = GetStringKeyFromRegistry(RegistryMainPath,CorePathRegistryKey);
+
+            ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
+            
+            // Start a thread to monitor ASTools.Core errors
+            _astoolsMonitorErrorsThread = new(ASToolsMonitorErrors); 
+            _astoolsMonitorErrorsThread.Start(); 
+
+        });
+        astoolsThread.Start();
         
-        // Start a thread to monitor ASTools.Core errors
-        _astoolsMonitorErrorsThread = new(ASToolsMonitorErrors); 
-        _astoolsMonitorErrorsThread.Start(); 
+        appInitThread.Join();
+        astoolsThread.Join();  
 
-        this.Exit += new ExitEventHandler(App_Exit);
-
-        Parser.Default.ParseArguments<Command>(e.Args)
-                    .WithParsed<Command>(opts => {Arguments = opts;});
-
-        OpenStartupPage();
+        OpenStartupPage();  
+        //ASToolsSendCommand("mode --ui");
+        AppStarted = true;   
     }
-    private static string GetLogErrorFilePath()
+    private static string GetStringKeyFromRegistry(string registryPath, string registryKey)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
         
-        string? configFilePath;
-        RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
+        string? stringKeyValue;
+        RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath);
         if (key != null)
         {
-            var keyValue = key.GetValue(LogErrorFileRegistryKey);
+            var keyValue = key.GetValue(registryKey);
             if (keyValue == null || keyValue is not string) 
-                throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{LogErrorFileRegistryKey}");
-            configFilePath = (string)keyValue;
+                throw new Exception($"Invalid value on registry key {registryPath}\\{registryKey}");
+            stringKeyValue = (string)keyValue;
         }
-        else throw new Exception($"Registry path {RegistryMainPath} not valid");
-        if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{LogErrorFileRegistryKey}");
-        return configFilePath;
-    }
-    private static string GetCorePath()
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
-        
-        string? configFilePath;
-        RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryMainPath);
-        if (key != null)
-        {
-            var keyValue = key.GetValue(CorePathRegistryKey);
-            if (keyValue == null || keyValue is not string) 
-                throw new Exception($"Invalid value on registry key {RegistryMainPath}\\{CorePathRegistryKey}");
-            configFilePath = (string)keyValue;
-        }
-        else throw new Exception($"Registry path {RegistryMainPath} not valid");
-        if (configFilePath == null) throw new Exception($"Cannot retrieve .config file path {RegistryMainPath}\\{CorePathRegistryKey}");
-        return configFilePath;
+        else throw new Exception($"Registry path {registryPath} not valid");
+        if (stringKeyValue == null) throw new Exception($"Cannot retrieve value from registry: {registryPath}\\{registryKey}");
+        return stringKeyValue;
     }
     private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
@@ -206,7 +206,6 @@ public partial class App : Application
             {
                 Application.Current.Dispatcher.Invoke(() => 
                 {
-                    //LogException($"Core:{errorLine}"); Core errors will be monitored by Core
                     SendErrorToErrorWindow(errorLine);
                 });
             }

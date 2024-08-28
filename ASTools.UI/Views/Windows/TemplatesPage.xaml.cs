@@ -18,13 +18,19 @@ public partial class TemplatesPage : Page
 
         templatesListGrid.ItemsSource = TemplatesList;  
         keywordsListGrid.ItemsSource = KeywordsList;   
-        workingDirectoryTextBox.Text = App.Arguments.WorkingDir ?? "";
-
-        KeywordsList.CollectionChanged += KeywordsList_CollectionChanged;
     }
     
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {    
+        var i = 0;
+        while(!App.AppStarted) 
+        { 
+            Thread.Sleep(50);
+            if (i>100) throw new Exception($"App non started");
+        }
+        
+        workingDirectoryTextBox.Text = App.Arguments.WorkingDir ?? "Insert a valid path here!";
+
         // Load templates list at window opening
         LoadTemplatesList();
     }
@@ -37,23 +43,21 @@ public partial class TemplatesPage : Page
         TemplatesList.Clear(); 
         foreach (var line in answer)
         {
-            var parts = line.Split('|');
-            if (parts.Length == 3)
-                TemplatesList.Add(new TemplateDataModel { Name = parts[1].Trim(), Path = parts[2].Trim() });
+            var parts = line.Split('|'); // Each line is RepositoryName|TemplateName|TemplatePath
+            if (parts.Length >= 3)
+                TemplatesList.Add(new TemplateDataModel { RepositoryName = parts[0].Trim(),Name = parts[1].Trim(), Path = parts[2].Trim() });
         }
         
         // Select first element in the grid
         if (templatesListGrid.Items.Count > 0)
             templatesListGrid.SelectedIndex = 0;
     }
-    private static void LoadTemplate(string templatePath)
+    private void LoadTemplate(string repositoryName, string templateName)
     {        
-        // Send command
-        App.ASToolsSendCommand($"templates --load \"{templatePath}\"");
-    }
-    private void LoadKeywordsList()
-    {        
-        // Send command
+        // Load template
+        App.ASToolsSendCommand($"templates --load-template \"{templateName}\" --load-template-repo \"{repositoryName}\"");
+           
+        // Asks for keywords list
         var answer = App.ASToolsSendCommand($"templates --k-list");
 
         // Fill KeywordsList with new values
@@ -63,7 +67,7 @@ public partial class TemplatesPage : Page
             var parts = line.Split('|');
             if (parts.Length == 2)
                 KeywordsList.Add(new KeywordDataModel { Keyword = parts[0].Trim(), Value = parts[1].Trim() });  
-        }        
+        }   
     }
     private void TemplatesListGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -73,40 +77,12 @@ public partial class TemplatesPage : Page
         var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
 
         // Load selected template
-        LoadTemplate(loadedTemplate.Path);
-
-        // Load keywords
-        LoadKeywordsList();        
-    }
-    private void KeywordsList_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        if (e.Action != NotifyCollectionChangedAction.Add || e.NewItems == null) return;
-        
-        // Link each keyword in the list to the ValueChanged event. This is used to trigger the change value event
-        foreach (var newItem in e.NewItems)
-        {
-            if (newItem is KeywordDataModel keyword)
-                keyword.PropertyChanged += Keyword_ValueChanged;            
-        }
-        
-        // Check if enabling Execute button
-        CheckExecuteButtonEnable();
-    }
-    private void Keyword_ValueChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        // A value is changed in a keyword. Check if is possible to enable Execute button
-        CheckExecuteButtonEnable();
+        LoadTemplate(loadedTemplate.RepositoryName,loadedTemplate.Name);    
     }
     private static void KeywordSendValueToASTools(KeywordDataModel keyword)
     {
         // Send command
         App.ASToolsSendCommand($"templates --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");                   
-    }
-    private void CheckExecuteButtonEnable()
-    {
-        // Execute button is enabled only if all keywords are filled.
-        executeButton.IsEnabled = KeywordsList.All(_ => _.Value != null && _.Value != string.Empty)
-                                    && !string.IsNullOrEmpty(workingDirectoryTextBox.Text);
     }
     private void ExecuteButton_Click(object sender, RoutedEventArgs e)
     {
@@ -117,9 +93,14 @@ public partial class TemplatesPage : Page
         // Send execute
         App.ASToolsSendCommand($"templates --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");                   
         
-        // Keywords are automatically resetted by ASTools.Core process                
-        foreach (var keyword in KeywordsList)
-            keyword.Value = string.Empty;
+        // Reload the template     
+        if (templatesListGrid.SelectedItem == null) return;
+        
+        // Save loaded template for future uses
+        var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
+
+        // Load selected template
+        LoadTemplate(loadedTemplate.RepositoryName,loadedTemplate.Name);
     }
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {

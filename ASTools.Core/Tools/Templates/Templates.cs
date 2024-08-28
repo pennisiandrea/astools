@@ -1,6 +1,6 @@
-using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using ConsoleTables;
 
 namespace ASTools.Core.Tools.Templates
 {
@@ -114,102 +114,100 @@ namespace ASTools.Core.Tools.Templates
             return returnValue;
         }
     }
-
-    public class Templates
-    {     
-        // Models
-        public class TemplateListItem(int id, string path, string name)
+   
+    public class TemplateInfo
+    {
+        private readonly RepositoryInfo? _repository;
+        public RepositoryInfo? Repository {get => _repository;}
+        private readonly string _name;
+        public string Name {get => _name;}
+        private readonly string? _path;
+        public string Path 
         {
-            public int ID = id;
-            public string Path = path;
-            public string Name = name;
+            get 
+            {
+                if (_repository != null) return System.IO.Path.Combine(_repository.Path,_name);
+                else return _path??"";
+            }
         }
-        
-        // Fields & properties
-        private readonly List<TemplateListItem> _templatesList = [];
-        public List<TemplateListItem> TemplatesList { get => _templatesList;}
-        private readonly List<string> _repositories = [];
-        public List<string> Repositories { get => _repositories; }
-        private readonly string _configFilePath;
 
-        // Constructor
-        public Templates(string configFilePath)
-        {            
-            if (!File.Exists(configFilePath)) throw new Exception($"{configFilePath} is not a valid file!");
+        public TemplateInfo(string path, string name)
+        {
+            _path = path;
+            _name = name;
+        }
+        public TemplateInfo(RepositoryInfo repository, string name)
+        {
+            _repository = repository;
+            _name = name;
+        }
+     
+    }
+    public class RepositoryInfo
+    {
+        private readonly string _name;
+        public string Name {get => _name;}
+        private readonly string _path;
+        public string Path {get => _path;}
+        private readonly List<TemplateInfo> _templates = [];
+        public List<TemplateInfo> Templates {get => _templates;}
+        public bool IsValid {get => Directory.Exists(Path);}
+
+        public RepositoryInfo(string nameAndPath)
+        {
+            var splittedMembers = nameAndPath.Split('|');
+
+            _name = splittedMembers[0];
+            _path = splittedMembers[1];
+
+            UpdateTemplatesInfo();
+        }
+
+        public RepositoryInfo(string name, string path)
+        {
+            _name = name;
+            _path = path;
+
+            UpdateTemplatesInfo();
+        }
+
+        public void UpdateTemplatesInfo()
+        {
+            _templates.Clear();
+
+            if (IsValid)
+            {
+                DirectoryInfo dir = new(_path);
+                
+                foreach (var folder in dir.GetDirectories())
+                {
+                    if ((folder.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+                        _templates.Add(new TemplateInfo(this,folder.Name));    
+                }
+            }  
+            else throw new Exception($"Repository {_name} is not longer valid");     
+            
+        } 
+
+    }
+    
+    public class Logic
+    {
+        private readonly List<RepositoryInfo> _repositoriesInfo = [];
+        private Template? _template;
+        private readonly string _configFilePath = "";
+        
+        public Logic(string configFilePath)
+        {
             _configFilePath = configFilePath;
-            GetConfigParameters();
-        }
-        
-        // Methods
-        public List<TemplateListItem> UpdateTemplatesList()
-        {
-            _templatesList.Clear();
 
-            int id = 0;
-            foreach (var path in _repositories)
-            {
-                if (Directory.Exists(path))
-                {
-                    DirectoryInfo dir = new(path);
-                    
-                    foreach (var template in dir.GetDirectories())
-                    {
-                        if ((template.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
-                            _templatesList.Add(new TemplateListItem(id++,template.FullName,template.Name));    
-                    }
-                }            
-            }
-                        
-            return TemplatesList;
+            InitRepositoriesInfo();
         }
-        public void AddRepository (string repository)
-        {
-            if (_repositories.Contains(repository)) throw new Exception($"{repository} already registered!");
-            if (!Directory.Exists(repository)) throw new Exception($"{repository} is not a valid path!");
-            
-            var iniFile = new IniFile(_configFilePath);
 
-            for (int i = 1; ; i++)
-            {
-                string tmprepository = iniFile.Read("Templates", $"Repository{i}");
-                if (string.IsNullOrEmpty(tmprepository))
-                {
-                    iniFile.Write("Templates", $"Repository{i}",repository);
-                    break;
-                }
-            }
-            GetConfigParameters();
-            UpdateTemplatesList();            
-        }
-        public void RemoveRepository (string repository)
-        {            
-            if (!_repositories.Contains(repository)) throw new Exception($"{repository} is not part of registered repositories!");
-            
-            var iniFile = new IniFile(_configFilePath);
-            var shift = false;
-            for (int i = 1; ; i++)
-            {
-                string actRepository = iniFile.Read("Templates", $"Repository{i}");
-
-                if (shift)
-                {    
-                    if (string.IsNullOrEmpty(actRepository)) {
-                        iniFile.DeleteKey("Templates", $"Repository{i-1}");
-                        break;    
-                    }   
-                    else iniFile.Write("Templates", $"Repository{i-1}",actRepository);                    
-                }
-
-                if (string.IsNullOrEmpty(actRepository)) break;
-                else if (actRepository == repository) shift = true;    
-            }
-            GetConfigParameters();
-            UpdateTemplatesList();            
-        }
-        private void GetConfigParameters()
+        private void InitRepositoriesInfo()
         {
             // Clear repositories list
-            _repositories.Clear();
+            _repositoriesInfo.Clear();
 
             // Open config.ini file 
             var iniFile = new IniFile(_configFilePath);
@@ -217,13 +215,260 @@ namespace ASTools.Core.Tools.Templates
             // Read all parameters under [Templates] section named like Repository1, Repository2...
             for (int i = 1; ; i++)
             {
-                string repository = iniFile.Read("Templates", $"Repository{i}");
-                if (string.IsNullOrEmpty(repository))
+                string repositoryString = iniFile.Read("Templates", $"Repository{i}");
+                if (string.IsNullOrEmpty(repositoryString))
                     break;
                 
-                if (!_repositories.Contains(repository) && Directory.Exists(repository)) _repositories.Add(repository);
+                var splittedRepository = repositoryString.Split('|');
+
+                RepositoryInfo repository = new(splittedRepository[0],splittedRepository[1]);
+
+                if (!_repositoriesInfo.Any(_ => _.Name == repository.Name || _.Path == repository.Path) && repository.IsValid) _repositoriesInfo.Add(repository);
             }
         }
+        public void Execute(Command.Templates commands, bool executionByUI)
+        {            
+            CheckCommand(commands);
+            
+            if(executionByUI) UICommands(commands);
+            else ConsoleCommands(commands);
+        }
+        private void CheckCommand(Command.Templates commands)
+        {
+            // ^ == XOR
+
+            if (commands.RepositoryAdd == null ^ commands.RepositoryAddPath == null) throw new Exception($"Incomplete command");
+ 
+            if (commands.LoadTemplate == null ^ commands.LoadTemplateRepo == null) throw new Exception($"Incomplete command");
+
+            if (commands.Exec && commands.ExecWorkingDir == null) throw new Exception($"Incomplete command");
+
+            if (commands.KeywordInsertName == null ^ commands.KeywordInsertValue == null) throw new Exception($"Incomplete command");
+
+        }
+        private void CommandRepositoryAdd(string name, string path)
+        {
+            if (_repositoriesInfo.Any(_ => _.Name == name || _.Path == path)) throw new Exception($"The repository already exists");  
+
+            RepositoryInfo newRepository = new(name, path);
+
+            if (newRepository.IsValid) // Add repository to config file
+            {
+                var iniFile = new IniFile(_configFilePath);
+
+                for (int i = 1; ; i++)
+                {
+                    string tmpRepositoryString = iniFile.Read("Templates", $"Repository{i}");
+                    if (string.IsNullOrEmpty(tmpRepositoryString))
+                    {
+                        iniFile.Write("Templates", $"Repository{i}",$"{newRepository.Name}|{newRepository.Path}");
+                        break;
+                    }
+                }
+            }
+
+            _repositoriesInfo.Add(newRepository);
+        }
+        private void CommandRepositoryRemove(string name)
+        {
+            if (!_repositoriesInfo.Any(_ => _.Name == name)) throw new Exception($"{name} is not a listed repository!");
+            
+            var iniFile = new IniFile(_configFilePath);
+            var shift = false;
+            for (int i = 1; ; i++)
+            {
+                string actRepositoryString = iniFile.Read("Templates", $"Repository{i}");
+
+                if (shift)
+                {    
+                    if (string.IsNullOrEmpty(actRepositoryString)) {
+                        iniFile.DeleteKey("Templates", $"Repository{i-1}");
+                        break;    
+                    }   
+                    else iniFile.Write("Templates", $"Repository{i-1}",actRepositoryString);                    
+                }
+
+                if (string.IsNullOrEmpty(actRepositoryString)) break;
+                else if (actRepositoryString.Split('|')[0] == name) shift = true;    
+            }
+            
+            _repositoriesInfo.Remove(_repositoriesInfo.First(_ => _.Name == name));
+        }
+        private void CommandLoadTemplate(string repositoryName, string templateName)
+        {            
+            // Create a complete new instance of _template.
+            try
+            {
+                _template = new(_repositoriesInfo.First(_ => _.Name == repositoryName).Templates.First(_ => _.Name == templateName));
+            }
+            catch (Exception)
+            {
+                _template = null; // In case of error delete previously created _template instances
+                throw;
+            }
+        }
+        private void CommandUnloadTemplate()
+        {
+            _template = null;
+        }
+        private void CommandKeywordInsert(string name, string? value)
+        {
+            if (_template == null) throw new Exception($"No template loaded"); 
+            if (name == null) throw new Exception($"No keyword name provided");
+            if (value == null) throw new Exception($"No keyword value provided");
+                                                       
+            _template.SetKeywordValue(new TemplateConfigClass.KeywordClass(){ID = name,Value = value});               
+        }
+        private void CommandKeywordClean()
+        {
+            if (_template == null) throw new Exception($"No template loaded");  
+            
+            _template.ResetKeywordsValues();            
+        }
+        
+        // Templates - Console
+        private void ConsoleCommands(Command.Templates commands)
+        {
+            //Commands typ 1
+            if (commands.LoadTemplateRepo != null && commands.LoadTemplate != null) CommandLoadTemplate(commands.LoadTemplateRepo,commands.LoadTemplate);
+
+            //Commands typ 2
+            if (commands.TemplatesList) ConsoleWriteTemplatesList();    
+            else if (commands.LoadedTemplate) ConsoleCommandLoadedTemplate();   
+            else if (commands.UnloadTemplate) CommandUnloadTemplate();          
+            else if (commands.Exec && commands.ExecWorkingDir != null) ConsoleCommandExec(commands.ExecWorkingDir);          
+            else if (commands.KeywordsList) ConsoleCommandKeywordsList();  
+            else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue); 
+            else if (commands.KeywordsClean) CommandKeywordClean(); 
+            else if (commands.RepositoriesList) ConsoleCommandRepositoriesList(); 
+            else if (commands.RepositoryAdd != null && commands.RepositoryAddPath != null) CommandRepositoryAdd(commands.RepositoryAdd,commands.RepositoryAddPath); 
+            else if (commands.RepositoryRemove != null) CommandRepositoryRemove(commands.RepositoryRemove); 
+                  
+        }
+        private void ConsoleWriteTemplatesList()
+        {
+            var table = new ConsoleTable("ID", "Repository" ,"Name", "Path");
+            
+            var id = 0;
+            foreach (var repository in _repositoriesInfo)
+            {
+                foreach (var template in repository.Templates)
+                {
+                    id++;
+                    table.AddRow(id,repository.Name,template.Name,template.Path);  
+                }
+            }
+                
+            table.Write(Format.Minimal); 
+        }
+        private void ConsoleCommandRepositoriesList()
+        {    
+            var table = new ConsoleTable("Name", "Path");
+            
+            foreach (var repository in _repositoriesInfo)
+                table.AddRow(repository.Name,repository.Path);                  
+                            
+            table.Write(Format.Minimal);           
+        }
+        private void ConsoleCommandExec(string execWorkingDir)
+        {   
+            if (_template == null) throw new Exception($"No template loaded");
+
+            if(!_template.KeywordsReady && _template.Config.Keywords != null) // Ask user to input keywords
+            {
+                foreach (var keyword in _template.Config.Keywords)
+                {
+                    do
+                    {
+                        Console.Write($"Please, insert the keyword value of {keyword.ID}:");
+                        keyword.Value = Console.ReadLine();    
+                    } while(keyword.Value == null);                    
+                    _template.SetKeywordValue(keyword);
+                }
+            }
+
+            _template.Execute(execWorkingDir);  
+            _template.ResetKeywordsValues(); // This prevents undesired repetitions          
+        }
+        private void ConsoleCommandKeywordsList()
+        {
+            if (_template == null) throw new Exception($"No template loaded");  
+            
+            var table = new ConsoleTable("ID", "Value");
+            
+            if (_template.Config.Keywords != null)
+                foreach (var keyword in _template.Config.Keywords)
+                    table.AddRow(keyword.ID,keyword.Value);                     
+
+            table.Write(Format.Minimal);              
+        }
+        private void ConsoleCommandLoadedTemplate()
+        {
+            if (_template == null) throw new Exception($"No template loaded");  
+
+            var table = new ConsoleTable("Repository" ,"Name", "Path");
+
+            table.AddRow(_template.TemplateInfo.Repository?.Name,_template.TemplateInfo.Name,_template.TemplateInfo.Path); 
+            
+            table.Write(Format.Minimal); 
+        }
+
+        // Templates - UI
+        private void UICommands(Command.Templates commands)
+        {
+            //Commands typ 1
+            if (commands.LoadTemplateRepo != null && commands.LoadTemplate != null) CommandLoadTemplate(commands.LoadTemplateRepo,commands.LoadTemplate);    
+            
+            //Commands typ 2
+            if (commands.TemplatesList) UICommandTemplatesList();   
+            else if (commands.LoadedTemplate) UICommandLoadedTemplate();   
+            else if (commands.UnloadTemplate) CommandUnloadTemplate();   
+            else if (commands.Exec && commands.ExecWorkingDir != null) UICommandExec(commands.ExecWorkingDir);    
+            else if (commands.KeywordsList) UICommandKeywordsList(); 
+            else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue);    
+            else if (commands.KeywordsClean) CommandKeywordClean(); 
+            else if (commands.RepositoriesList) UICommandRepositoriesList();    
+            else if (commands.RepositoryAdd != null && commands.RepositoryAddPath != null) CommandRepositoryAdd(commands.RepositoryAdd,commands.RepositoryAddPath); 
+            else if (commands.RepositoryRemove != null) CommandRepositoryRemove(commands.RepositoryRemove); 
+                      
+        }
+        private void UICommandTemplatesList()
+        {           
+            foreach (var repository in _repositoriesInfo)
+            {
+                foreach (var template in repository.Templates)
+                    Console.WriteLine($"{repository.Name}|{template.Name}|{template.Path}");
+            }    
+        }
+        private void UICommandRepositoriesList()
+        {             
+            foreach (var repository in _repositoriesInfo)
+                Console.WriteLine($"{repository.Name}|{repository.Path}"); 
+        }
+        private void UICommandExec(string execWorkingDir)
+        {
+            if (_template == null) throw new Exception($"No template loaded");  
+            if (!_template.Ready) throw new Exception($"Template not ready to be installed");
+
+            _template.Execute(execWorkingDir);  
+            _template.ResetKeywordsValues(); // This prevents undesired repetitions                 
+        }
+        private void UICommandKeywordsList()
+        {
+            if (_template == null) throw new Exception($"No template loaded"); 
+              
+            if (_template.Config.Keywords != null)
+                foreach (var keyword in _template.Config.Keywords)
+                    Console.WriteLine($"{keyword.ID}|{keyword.Value}");                        
+        }
+        private void UICommandLoadedTemplate()
+        {
+            if (_template == null) throw new Exception($"No template loaded");  
+
+            Console.WriteLine($"{_template.TemplateInfo.Repository?.Name}|{_template.TemplateInfo.Name}|{_template.TemplateInfo.Path}");    
+
+        }
+
     }
 
     public class Template
@@ -245,16 +490,16 @@ namespace ASTools.Core.Tools.Templates
         public TemplateConfigClass Config { get => _config;}
         public bool KeywordsReady {get => _config.Keywords?.All(_ => !string.IsNullOrEmpty(_.Value)) ?? true;}
         public bool Ready { get => KeywordsReady; }
-        private readonly string _templatePath;
-        public string TemplatePath { get => _templatePath;}
+        private readonly TemplateInfo _templateInfo;
+        public TemplateInfo TemplateInfo { get => _templateInfo;}
         
         // Constructor
-        public Template(string templatePath)
+        public Template(TemplateInfo templateInfo)
         {        
-            if (!Directory.Exists(templatePath)) throw new Exception($"Template {templatePath} is not valid");
+            if (!Directory.Exists(templateInfo.Path)) throw new Exception($"Template {templateInfo.Path} is not valid");
 
-            _config = GetConfig(templatePath);
-            _templatePath = templatePath; 
+            _config = GetConfig(templateInfo.Path);
+            _templateInfo = templateInfo; 
         }
 
         // Methods
@@ -262,7 +507,7 @@ namespace ASTools.Core.Tools.Templates
         {
             if (!Directory.Exists(userPath)) throw new Exception($"Path {userPath} is not valid");
 
-            CalculateConfigConstants(_templatePath, userPath);
+            CalculateConfigConstants(_templateInfo.Path, userPath);
 
             // Replace constants in config structure:            
             foreach (var item in _config.Instructions)
