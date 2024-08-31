@@ -1,29 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\CommonSettings.props" />
+
   <!-- General settings -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-
-  <!-- Debug -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <SelfContained>false</SelfContained>
-  </PropertyGroup>
-
-  <!-- Release -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <ProjectReference Include="..\ASTools.Library\ASTools.Library.csproj" />
+    
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    
     <Resource Include="Resources\Templates.png" />
     <Resource Include="Resources\QuestionMark.png" />
     <Resource Include="Resources\Settings.png" />

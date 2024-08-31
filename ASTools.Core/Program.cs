@@ -1,8 +1,9 @@
-﻿using CommandLine;
-using Microsoft.Win32;
+﻿
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using CommandLine;
+using ASTools.Library;
 
 namespace ASTools.Core
 {
@@ -122,12 +123,9 @@ namespace ASTools.Core
 
     partial class Program
     {
-        private const string RegistryMainPath = "SOFTWARE\\ASTools\\";
-        private const string ConfigFileRegistryKey = "ConfigFile";
-        private const string LogErrorFileRegistryKey = "LogError";
         private const string EndOfCommandUI = ""; // An empty line is enough
         private static string _configFilePath = "";
-        private static string _logErrorFilePath = "error.log"; // Default path. It will change after GetLogErrorFilePath();
+        private static string _logErrorFilePath = Constants.LogErrorFilePathDefaultValue; // Default path. It will change after GetLogErrorFilePath();
         private static bool _executionByUI = false;
 
         static Program()
@@ -138,8 +136,8 @@ namespace ASTools.Core
 
         static void Main(string[] argv)
         {         
-            _configFilePath = GetStringKeyFromRegistry(RegistryMainPath,ConfigFileRegistryKey);
-            _logErrorFilePath = GetStringKeyFromRegistry(RegistryMainPath,LogErrorFileRegistryKey);
+            _configFilePath = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.ConfigFileRegistryKey);
+            _logErrorFilePath = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.LogErrorFileRegistryKey);
 
             Tools.Templates.Logic TemplatesLogic = new(_configFilePath); 
 
@@ -225,23 +223,6 @@ namespace ASTools.Core
             else if(opts.Console) _executionByUI = false;
 
             return 0;
-        }
-        private static string GetStringKeyFromRegistry(string registryPath, string registryKey)
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
-            
-            string? stringKeyValue;
-            RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath);
-            if (key != null)
-            {
-                var keyValue = key.GetValue(registryKey);
-                if (keyValue == null || keyValue is not string) 
-                    throw new Exception($"Invalid value on registry key {registryPath}\\{registryKey}");
-                stringKeyValue = (string)keyValue;
-            }
-            else throw new Exception($"Registry path {registryPath} not valid");
-            if (stringKeyValue == null) throw new Exception($"Cannot retrieve value from registry: {registryPath}\\{registryKey}");
-            return stringKeyValue;
         }
     
     }

@@ -233,7 +233,7 @@ namespace ASTools.Core.Tools.Templates
             if(executionByUI) UICommands(commands);
             else ConsoleCommands(commands);
         }
-        private void CheckCommand(Command.Templates commands)
+        private static void CheckCommand(Command.Templates commands)
         {
             // ^ == XOR
 

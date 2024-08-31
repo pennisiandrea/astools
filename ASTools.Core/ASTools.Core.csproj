@@ -1,26 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\CommonSettings.props" />
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <ApplicationIcon>Icon.ico</ApplicationIcon>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-
-  <!-- Debug -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <SelfContained>false</SelfContained>
-  </PropertyGroup>
-
-  <!-- Release -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <SelfContained>true</SelfContained>
+    <ImplicitUsings>enable</ImplicitUsings>   
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <ProjectReference Include="..\ASTools.Library\ASTools.Library.csproj" />
+    
     <PackageReference Include="ConsoleTables" Version="2.6.1" />
   </ItemGroup>
 

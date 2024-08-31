@@ -1,11 +1,10 @@
 ﻿using System.Windows;
 using System.Diagnostics;
-using CommandLine;
 using System.ComponentModel;
 using System.Windows.Threading;
 using System.IO;
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
+using ASTools.Library;
+using CommandLine;
 
 namespace ASTools.UI;
 public class Command
@@ -49,10 +48,7 @@ public class Error : INotifyPropertyChanged
 }
 
 public partial class App : Application
-{
-    private const string RegistryMainPath = "SOFTWARE\\ASTools\\";
-    private const string LogErrorFileRegistryKey = "LogError";
-    private const string CorePathRegistryKey = "CorePath";
+{    
     public static Process ASToolsProcess {get; private set;} = null!;
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
@@ -66,7 +62,7 @@ public partial class App : Application
     }; 
     public static Command Arguments {get; private set;} = null!;
     private Thread? _astoolsMonitorErrorsThread;
-    private static string _logErrorFilePath = "astools_error.log"; // Default path. It will change in OnStartup method
+    private static string _logErrorFilePath = Constants.LogErrorFilePathDefaultValue;
     private static ErrorWindow? _errorWindow;
     public static bool AppStarted {get; private set;}
     
@@ -80,7 +76,7 @@ public partial class App : Application
         Thread appInitThread = new(() => 
         {
             // Retrieve logError file path from windows registry
-            _logErrorFilePath = GetStringKeyFromRegistry(RegistryMainPath,LogErrorFileRegistryKey);
+            _logErrorFilePath = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.LogErrorFileRegistryKey);
 
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -96,7 +92,7 @@ public partial class App : Application
         Thread astoolsThread = new(() => 
         {
             // Retrieve corePath from windows registry
-            _astoolsProcessStartInfo.FileName = GetStringKeyFromRegistry(RegistryMainPath,CorePathRegistryKey);
+            _astoolsProcessStartInfo.FileName = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.CorePathRegistryKey);
 
             ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
             
@@ -111,25 +107,7 @@ public partial class App : Application
         astoolsThread.Join();  
 
         OpenStartupPage();  
-        //ASToolsSendCommand("mode --ui");
         AppStarted = true;   
-    }
-    private static string GetStringKeyFromRegistry(string registryPath, string registryKey)
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new Exception($"This program can be executed only on windows.");
-        
-        string? stringKeyValue;
-        RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath);
-        if (key != null)
-        {
-            var keyValue = key.GetValue(registryKey);
-            if (keyValue == null || keyValue is not string) 
-                throw new Exception($"Invalid value on registry key {registryPath}\\{registryKey}");
-            stringKeyValue = (string)keyValue;
-        }
-        else throw new Exception($"Registry path {registryPath} not valid");
-        if (stringKeyValue == null) throw new Exception($"Cannot retrieve value from registry: {registryPath}\\{registryKey}");
-        return stringKeyValue;
     }
     private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {

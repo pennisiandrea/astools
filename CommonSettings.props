@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <SelfContained>false</SelfContained>
+    <ApplicationIcon>..\Data\Resources\Icon.ico</ApplicationIcon> 
+  </PropertyGroup>
+</Project>

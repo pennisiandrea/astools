@@ -1,41 +1,41 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Build ASTools.Core",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/ASTools.Core/ASTools.Core.csproj"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "Build ASTools.UI",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/ASTools.UI/ASTools.UI.csproj"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-          "label": "Inno Setup: Compile Script",
+  "version": "2.0.0",
+  "tasks": [
+      {
+          "label": "Build ASTools.Core",
+          "command": "dotnet",
           "type": "process",
-          "command": "ISCC.exe",
           "args": [
-            "${file}"
+              "build",
+              "${workspaceFolder}/ASTools.Core/ASTools.Core.csproj"
           ],
-          "presentation": {
-            "reveal": "always",
-            "echo": false
-          },
-          "group": {
-            "kind": "build",
-            "isDefault": true
-          }
+          "problemMatcher": "$msCompile"
+      },
+      {
+          "label": "Build ASTools.UI",
+          "command": "dotnet",
+          "type": "process",
+          "args": [
+              "build",
+              "${workspaceFolder}/ASTools.UI/ASTools.UI.csproj"
+          ],
+          "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "Inno Setup: Compile Script",
+        "type": "process",
+        "command": "ISCC.exe",
+        "args": [
+          "${file}"
+        ],
+        "presentation": {
+          "reveal": "always",
+          "echo": false
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
         }
-    ]
+      }
+  ]
 }

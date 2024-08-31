@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASTools.Core", "ASTools.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASTools.UI", "ASTools.UI\ASTools.UI.csproj", "{4A469CFF-CC17-417B-99A7-4510411154B2}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASTools.Library", "ASTools.Library\ASTools.Library.csproj", "{8b2bfa94-a759-4107-b971-a4dca24f6608}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{4A469CFF-CC17-417B-99A7-4510411154B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A469CFF-CC17-417B-99A7-4510411154B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A469CFF-CC17-417B-99A7-4510411154B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8b2bfa94-a759-4107-b971-a4dca24f6608}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8b2bfa94-a759-4107-b971-a4dca24f6608}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8b2bfa94-a759-4107-b971-a4dca24f6608}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8b2bfa94-a759-4107-b971-a4dca24f6608}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
