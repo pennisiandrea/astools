@@ -31,6 +31,11 @@ namespace ASTools.Core
             public bool LoadedTemplate { get; set; }
             [Option("unload", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Unload the loaded template")]
             public bool UnloadTemplate { get; set; }
+
+            [Option("delete-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Delete a template - name")]
+            public string? DeleteTemplateName { get; set; }
+            [Option("delete-repo", Default = null, HelpText = "Delete a template - repository")]
+            public string? DeleteTemplateRepo { get; set; }
             
             // Templates repositories commands
             [Option("repo-list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the list of templates repositories")]

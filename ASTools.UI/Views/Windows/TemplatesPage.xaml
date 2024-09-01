@@ -82,6 +82,12 @@
                         <DataGridTextColumn Header="Repository" Width="4*" Binding="{Binding RepositoryName}" />
                         <DataGridTextColumn Header="Name" Width="10*" Binding="{Binding Name}" />
                     </DataGrid.Columns>
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Open folder" Click="TemplatesListGrid_OpenFolder_Click"/>
+                            <MenuItem Header="Delete" Click="TemplatesListGrid_Delete_Click"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
             </DataGrid>
         </Grid>
 

@@ -1,6 +1,9 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Navigation;
 using ASTools.Library;
 
@@ -50,6 +53,8 @@ public partial class TemplatesPage : Page
         // Select first element in the grid
         if (templatesListGrid.Items.Count > 0)
             templatesListGrid.SelectedIndex = 0;
+        else
+            KeywordsList.Clear(); 
     }
     private void LoadTemplate(string repositoryName, string templateName)
     {        
@@ -117,6 +122,44 @@ public partial class TemplatesPage : Page
         // Templates list loaded -> select the first element
         if (templatesListGrid.Items.Count > 0)
             templatesListGrid.SelectedIndex = 0; 
+    } 
+    private void TemplatesListGrid_OpenFolder_Click(object sender, RoutedEventArgs e)
+    {        
+        if (templatesListGrid.SelectedItem != null)
+        {
+            var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
+            
+            if (!string.IsNullOrEmpty(loadedTemplate.Path))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = loadedTemplate.Path,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+        }        
+    }
+    private void TemplatesListGrid_Delete_Click(object sender, RoutedEventArgs e)
+    {
+        if (templatesListGrid.SelectedItem != null)
+        {
+            var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
+            
+            if (!string.IsNullOrEmpty(loadedTemplate.Path))
+            {
+                var result = MessageBox.Show("Are you sure? This oepration cannot be undone.", 
+                                            $"You are deleting {loadedTemplate.Name}.", 
+                                            MessageBoxButton.YesNo, 
+                                            MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    App.ASToolsSendCommand($"templates --delete-name \"{loadedTemplate.Name}\" --delete-repo \"{loadedTemplate.RepositoryName}\"");
+                    LoadTemplatesList();
+                }
+            }
+        }
     }
     
 }

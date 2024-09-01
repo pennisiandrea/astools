@@ -246,6 +246,8 @@ namespace ASTools.Core.Tools.Templates
 
             if (commands.KeywordInsertName == null ^ commands.KeywordInsertValue == null) throw new Exception($"Incomplete command");
 
+            if (commands.DeleteTemplateName == null ^ commands.DeleteTemplateRepo == null) throw new Exception($"Incomplete command");
+
         }
         private void CommandRepositoryAdd(string name, string path)
         {
@@ -326,6 +328,20 @@ namespace ASTools.Core.Tools.Templates
             
             _template.ResetKeywordsValues();            
         }
+        private void CommandDeleteTemplate(string name, string repository)
+        {         
+            // Unload if loaded            
+            if (_template != null && _template.TemplateInfo.Repository?.Name == repository && _template.TemplateInfo.Name == name)
+                CommandUnloadTemplate();
+            
+            // Delete folder
+            Directory.Delete(_repositoriesInfo.First(_ => _.Name == repository).Templates.First(_ => _.Name == name).Path,true); 
+
+            // Update repository
+            if (repository != null)
+                _repositoriesInfo.First(_ => _.Name == repository).UpdateTemplatesInfo();
+
+        }
         
         // Templates - Console
         private void ConsoleCommands(Command.Templates commands)
@@ -336,7 +352,8 @@ namespace ASTools.Core.Tools.Templates
             //Commands typ 2
             if (commands.TemplatesList) ConsoleWriteTemplatesList();    
             else if (commands.LoadedTemplate) ConsoleCommandLoadedTemplate();   
-            else if (commands.UnloadTemplate) CommandUnloadTemplate();          
+            else if (commands.UnloadTemplate) CommandUnloadTemplate();    
+            else if (commands.DeleteTemplateName != null && commands.DeleteTemplateRepo != null) CommandDeleteTemplate(commands.DeleteTemplateName,commands.DeleteTemplateRepo);         
             else if (commands.Exec && commands.ExecWorkingDir != null) ConsoleCommandExec(commands.ExecWorkingDir);          
             else if (commands.KeywordsList) ConsoleCommandKeywordsList();  
             else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue); 
@@ -423,7 +440,8 @@ namespace ASTools.Core.Tools.Templates
             //Commands typ 2
             if (commands.TemplatesList) UICommandTemplatesList();   
             else if (commands.LoadedTemplate) UICommandLoadedTemplate();   
-            else if (commands.UnloadTemplate) CommandUnloadTemplate();   
+            else if (commands.UnloadTemplate) CommandUnloadTemplate();     
+            else if (commands.DeleteTemplateName != null && commands.DeleteTemplateRepo != null) CommandDeleteTemplate(commands.DeleteTemplateName,commands.DeleteTemplateRepo);         
             else if (commands.Exec && commands.ExecWorkingDir != null) UICommandExec(commands.ExecWorkingDir);    
             else if (commands.KeywordsList) UICommandKeywordsList(); 
             else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue);    
@@ -434,7 +452,7 @@ namespace ASTools.Core.Tools.Templates
                       
         }
         private void UICommandTemplatesList()
-        {           
+        {         
             foreach (var repository in _repositoriesInfo)
             {
                 foreach (var template in repository.Templates)
