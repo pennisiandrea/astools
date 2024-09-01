@@ -1,5 +1,6 @@
 using System.Xml;
 using System.Xml.Serialization;
+using ASTools.Library;
 using ConsoleTables;
 
 namespace ASTools.Core.Tools.Templates
@@ -526,19 +527,19 @@ namespace ASTools.Core.Tools.Templates
                     case "Copy":
                         if (instruction.Source == null || instruction.Destination == null) throw new Exception($"Copy instruction failed! Invalid paths.");
                                                         
-                        string newDestPath = Copy(instruction.Destination.Path,instruction.Source.Path);
+                        string newDestPath = Utilities.Copy(instruction.Destination.Path,instruction.Source.Path);
                         if (_config.Keywords != null)
                             newDestPath = ReplaceKeywords(newDestPath,_config.Keywords);                                
 
                         if (instruction.Source.Type != null) // A type was specified -> Add xml element to descriptive file     
                         {                      
-                            AddDescriptiveXmlElement(newDestPath,instruction.Source.Type);
+                            Utilities.AddDescriptiveXmlElement(newDestPath,instruction.Source.Type);
 
                             if (_config.Keywords != null)
                             {
                                 string? descriptivePath = Path.GetDirectoryName(newDestPath);
                                 if (descriptivePath != null)
-                                    ReplaceKeywords(GetASDescriptiveFile(descriptivePath).FullName,_config.Keywords);
+                                    ReplaceKeywords(Utilities.GetASDescriptiveFile(descriptivePath).FullName,_config.Keywords);
                             }
                         }
                                                    
@@ -552,7 +553,7 @@ namespace ASTools.Core.Tools.Templates
                             foreach (var keyword in _config.Keywords)
                                 instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                    
                         
-                        Append(instruction.Destination.Path,instruction.Source.Path);
+                        Utilities.Append(instruction.Destination.Path,instruction.Source.Path);
                         
                         if (_config.Keywords != null)
                             ReplaceKeywords(instruction.Destination.Path,_config.Keywords);
@@ -562,7 +563,7 @@ namespace ASTools.Core.Tools.Templates
                     case "AddXmlElement":
                         if (instruction.Destination == null || instruction.XmlElements2Add == null) throw new Exception($"AddXmlElement instruction failed! Invalid path or Xml elements");
                         
-                        AddXmlElementsToFile(instruction.XmlElements2Add.XmlElements,instruction.XmlElements2Add.Path,instruction.Destination.Path);
+                        Utilities.AddXmlElementsToFile(instruction.XmlElements2Add.XmlElements,instruction.XmlElements2Add.Path,instruction.Destination.Path);
                         break;
                 
                     default:
@@ -598,11 +599,11 @@ namespace ASTools.Core.Tools.Templates
 
             if (configFileContent.Contains("$PROJECT_PATH") || configFileContent.Contains("$ACTIVE_CONFIGURATION_PATH"))
             {
-                string projectPath = GetASProjectPath(userPath);
+                string projectPath = Utilities.GetASProjectPath(userPath);
                 _configConstants["$PROJECT_PATH"] = projectPath;
                 
-                string activeConfig = GetASActiveConfigurationName(projectPath);
-                _configConstants["$ACTIVE_CONFIGURATION_PATH"] = GetASActiveConfigurationPath(projectPath,activeConfig);
+                string activeConfig = Utilities.GetASActiveConfigurationName(projectPath);
+                _configConstants["$ACTIVE_CONFIGURATION_PATH"] = Utilities.GetASActiveConfigurationPath(projectPath,activeConfig);
             }
             else
             {
@@ -688,249 +689,8 @@ namespace ASTools.Core.Tools.Templates
             else throw new Exception($"Invalid path to replace keywords: {destPath}");
 
             return replacedPath;
-        }
-        private static string Copy(string destPath, string sourcePath)
-        {
-            string copiedPath;
-
-            if (File.Exists(sourcePath)) // Copying a single file
-            {
-                FileInfo file = new(sourcePath);
-                copiedPath = Path.Combine(destPath,file.Name);
-                file.CopyTo(copiedPath);
-            }
-            else if (Directory.Exists(sourcePath)) // Copying a folder
-            {                
-                DirectoryInfo sourceDir = new(sourcePath);
-                DirectoryInfo destDir = new(destPath);
-
-                // Check if in destPath exists a directory like sourcePath. This sould be true only the first time
-                if (sourceDir.Name != destDir.Name)
-                {
-                    destPath = Path.Combine(destPath,sourceDir.Name);
-                    Directory.CreateDirectory(destPath);
-                }
-                copiedPath = destPath;
-
-                // Copy all files
-                FileInfo[] sourceFiles = sourceDir.GetFiles();
-                foreach (FileInfo file in sourceFiles) 
-                    file.CopyTo(Path.Combine(destPath,file.Name));
-                
-                // Copy all folders
-                DirectoryInfo[] directories = sourceDir.GetDirectories();
-                foreach (DirectoryInfo directory in directories)
-                {
-                    string newDestPath = Path.Combine(destPath,directory.Name);
-                    Directory.CreateDirectory(newDestPath);                
-                    Copy(newDestPath, directory.FullName);
-                }             
-            }
-            else throw new Exception($"Invalid path to copy: {sourcePath}");
-
-            return copiedPath;
-        }
-        private static void Append(string destPath, string sourcePath)
-        {
-            // Append source content to dest content
-
-            if (!File.Exists(destPath) || !File.Exists(sourcePath)) throw new Exception($"Failed to append {sourcePath} to {destPath}");
-            
-            string sourceContent = File.ReadAllText(sourcePath);
-            string destContent = File.ReadAllText(destPath);
-
-            File.WriteAllText(destPath,destContent + "\n" + sourceContent);
-        }
-        private static string GetASProjectPath(string path)
-        {
-            // Check if .apj file is in this directory
-            DirectoryInfo actDir = new(path);
-            FileInfo[] files = actDir.GetFiles();            
-            if (files.Any(file => file.Extension == ".apj")) return actDir.FullName;
-            else 
-            {
-                if (actDir.Parent != null) return GetASProjectPath(actDir.Parent.FullName);
-                else throw new Exception($"Automation Studio project not found.");
-            }
-        }
-        private static string GetASActiveConfigurationName(string projectPath)
-        {
-            string lastUserFile = Path.Combine(projectPath,"LastUser.set");
-            if (!File.Exists(lastUserFile)) throw new Exception($"Cannot find file {lastUserFile}");
-
-            // Carica il documento XML dal file
-            XmlDocument xmlDoc = new();
-            xmlDoc.Load(lastUserFile);
-
-            // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
-            if (xmlDoc.DocumentElement != null)
-            {
-                string namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
-                nsmgr.AddNamespace("ns", namespaceUri);
-            } 
+        }     
         
-            // Trova l'elemento specificato dal percorso 
-            XmlNode? node = xmlDoc.SelectSingleNode("/ns:ProjectSettings/ns:ConfigurationManager",nsmgr);
-
-            if (node is XmlElement element)
-            {
-                var attribute = element.Attributes["ActiveConfigurationName"];
-                if (attribute != null) return attribute.Value;  
-                else throw new Exception($"{lastUserFile} ActiveConfigurationName attribute not found");     
-            }            
-            else throw new Exception($"{lastUserFile} file structure not supported");
-        }
-        private static string GetASActiveConfigurationPath(string projectPath, string activeConfigName)
-        {
-            // Carica il documento XML dal file
-            string activeConfigFile = Path.Combine(projectPath,"Physical",activeConfigName,"Config.pkg");
-            XmlDocument xmlDoc = new();
-            xmlDoc.Load(activeConfigFile);
-
-            // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
-            if (xmlDoc.DocumentElement != null)
-            {
-                string namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
-                nsmgr.AddNamespace("ns", namespaceUri);
-            } 
-        
-            // Searching for CPU name
-            string? cpuName = null; 
-            XmlNode? parentNode = xmlDoc.SelectSingleNode("/ns:Configuration/ns:Objects",nsmgr);
-
-            if (parentNode != null)
-            {
-                foreach (XmlNode childNode in parentNode.ChildNodes)
-                {
-                    if (childNode is XmlElement element)
-                    {                       
-                        var attribute = element.Attributes["Type"];
-                        if (attribute != null && attribute.Value == "Cpu")
-                        {
-                            cpuName = element.InnerText;
-                            break;
-                        }
-                    }    
-                }
-            }            
-            else throw new Exception($"{activeConfigFile} file structure not supported");
-            
-            if (cpuName == null) throw new Exception($"{activeConfigFile} cannot find Cpu");
-
-            return Path.Combine(activeConfigFile,cpuName);
-        }
-        private static FileInfo GetASDescriptiveFile(string path)
-        {
-            try
-            {
-                DirectoryInfo dirInfo = new(path);
-                return dirInfo.GetFiles().First(file => file.Extension == ".pkg" || file.Extension == ".lby");   
-            }
-            catch (System.Exception)
-            {
-                throw new Exception($"Cannot find descriptive file (.pkg or .lby) in {path}");
-            }   
-        }
-        private static void AddXmlElementsToFile(XmlElement[] elements, string xmlPath, string filePath)
-        {
-            if (!File.Exists(filePath)) throw new Exception($"Cannot find xml file {filePath}.");
-
-            // Carica il documento XML dal file
-            XmlDocument xmlDoc = new();
-            xmlDoc.Load(filePath);
-
-            // Estrazione spazio dei nomi dal nodo radice
-            XmlNamespaceManager nsmgr = new(xmlDoc.NameTable);
-            string namespaceUri = "";
-            if (xmlDoc.DocumentElement != null)
-            {
-                namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
-                nsmgr.AddNamespace("ns", namespaceUri);
-            } 
-        
-            // Trova l'elemento specificato dal percorso XPath
-            XmlNode? parentNode = xmlDoc.SelectSingleNode(xmlPath,nsmgr);
-
-            if (parentNode != null)
-            {
-                // Aggiunge l'elemento come figlio del nodo trovato
-                foreach (var element in elements)
-                {
-                    XmlElement newElement = xmlDoc.CreateElement(element.LocalName,namespaceUri);
-                    newElement.InnerText = element.InnerText;
-                    foreach (XmlAttribute attribute in element.Attributes)
-                        newElement.SetAttribute(attribute.Name, attribute.Value);
-        
-                    XmlNode importedNode = xmlDoc.ImportNode(newElement, true);
-                    parentNode.AppendChild(importedNode);  
-                }
-
-                // Salva il documento XML aggiornato
-                xmlDoc.Save(filePath);
-
-            }
-            else throw new Exception($"Cannot find path {xmlPath} in file {filePath}. Failed to add xml elements");
-        } 
-        private static void AddDescriptiveXmlElement(string addedItemPath, string type)
-        {      
-            // Get DescriptiveFile
-            string? descriptiveDirName = Path.GetDirectoryName(addedItemPath) ?? throw new Exception($"Cannot find {addedItemPath} folder");
-            FileInfo descriptiveFile = GetASDescriptiveFile(descriptiveDirName);    
-
-            // Get ItemName
-            string itemName = Path.GetFileName(addedItemPath);  
-               
-            // Get Xml element
-            XmlElement[] newElement = [GetDescriptiveXmlElement(type,itemName)];
-
-            // Get xmlPath
-            string xmlPath = descriptiveFile.Extension switch
-            {
-                ".pkg" => "/ns:Package/ns:Objects",
-                ".lby" => "/ns:Library/ns:Objects",
-                _ => throw new Exception($"Descriptive file extension {descriptiveFile.Extension} not supported."),
-            };
-
-            // Add element to xml
-            AddXmlElementsToFile(newElement,xmlPath,descriptiveFile.FullName);
-        }
-        private static XmlElement GetDescriptiveXmlElement(string type, string name)
-        {
-            XmlDocument xmlDoc = new();
-
-            string? xmlString = null;
-
-            switch (type.ToLower())
-            {
-                case "package":   
-                    xmlString = $"<Object Type=\"Package\">{name}</Object>";
-                    break;
-
-                case "file":   
-                    xmlString = $"<Object Type=\"File\">{name}</Object>";
-                    break;
-
-                case "library_binary":   
-                    xmlString = $"<Object Type=\"Library\" Language=\"binary\">{name}</Object>";
-                    break;
-
-                case "library_iec":   
-                    xmlString = $"<Object Type=\"Library\" Language=\"IEC\">{name}</Object>";
-                    break;
-
-                case "program_iec":   
-                    xmlString = $"<Object Type=\"Program\" Language=\"IEC\">{name}</Object>";
-                    break;
-            }
-
-            if (xmlString == null) throw new Exception($"Specified type {type} of element {name} not supported.");
-            xmlDoc.LoadXml(xmlString);
-            
-            if (xmlDoc.DocumentElement == null) throw new Exception($"Something went wrong generating Xml descriptive object of type {type} and name {name}");
-            return xmlDoc.DocumentElement;
-        }
     }
 
 }
