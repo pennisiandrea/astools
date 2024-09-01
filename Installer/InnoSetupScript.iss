@@ -3,6 +3,7 @@
 #define MyAppPublisher "Andrea Pennisi"
 #define DotNETInstaller "windowsdesktop-runtime-8.0.8-win-x64.exe"
 #define DotNETVersion "Microsoft.WindowsDesktop.App 8.0.8"
+#define MyProjectMainPath "C:\Data\astools"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -17,9 +18,9 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 PrivilegesRequired=admin
-OutputDir=C:\Data\astools\Installer
+OutputDir={#MyProjectMainPath}\Installer
 OutputBaseFilename=ASToolsInstaller
-SetupIconFile=C:\Data\astools\Data\Resources\Icon.ico
+SetupIconFile={#MyProjectMainPath}\Data\Resources\Icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -28,16 +29,19 @@ ArchitecturesInstallIn64BitMode=x64compatible
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Dirs] 
+Name: "{commonappdata}\ASTools" ; Permissions: users-modify users-full
+
 [Files]
 ; Dependencies
 Source: "Dependencies\{#DotNETInstaller}"; Flags: dontcopy noencryption
 ; Projects
-Source: "C:\Data\astools\ASTools.Core\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Core"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Data\astools\ASTools.UI\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.UI"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Data\astools\ASTools.Library\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Library"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyProjectMainPath}\ASTools.Core\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Core"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyProjectMainPath}\ASTools.UI\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.UI"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyProjectMainPath}\ASTools.Library\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Library"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Data
-Source: "C:\Data\astools\Data\ASTemplates\Default\*"; DestDir: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Data\astools\Data\Config.ini"; DestDir: "{commonappdata}\ASTools"; Flags: ignoreversion onlyifdoesntexist
+Source: "{#MyProjectMainPath}\Data\ASTemplates\Default\*"; DestDir: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyProjectMainPath}\Data\Config.ini"; DestDir: "{commonappdata}\ASTools"; Flags: ignoreversion onlyifdoesntexist
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [INI]
@@ -59,10 +63,16 @@ Root: HKLM; Subkey: "SOFTWARE\ASTools"; ValueType: string; ValueName: "CorePath"
 [Icons]
 Name: "{group}\ASTools.Core"; Filename: "{app}\ASTools.Core\ASTools.Core.exe"
 Name: "{group}\ASTools.UI"; Filename: "{app}\ASTools.UI\ASTools.UI.exe"
+Name: "{group}\{cm:UninstallProgram, {#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Code]
-// Dependencies check code 
-// Check if dotnet runtime correct version is installed
+var
+  DependencyPage: TWizardPage;
+  DependencyListBox: TNewListBox;
+  DependencyToInstall_Dotnet: Boolean;
+  DependencyInstallationRequired: Boolean;
+  
+// Check if dotnet is installed **********************************************************************
 function IsDotNetInstalled(Version: string): Boolean;
 var
   TmpFileName: string;
@@ -86,27 +96,97 @@ begin
   Result := (Pos(Version, ResultString) > 0);
 end;
 
-// Install dotnet if needed
-function InstallDotNetIfNeeded: Boolean;
+// InstallDependencies ********************************************************************** 
+function InstallDependencies: Boolean;
 var
   ResultCode: Integer;
 begin
-  if not IsDotNetInstalled(ExpandConstant('{#DotNETVersion}')) then
+  Result := True;
+  
+  // Install dotnet if required
+  if DependencyToInstall_Dotnet then
   begin
     ExtractTemporaryFiles('{tmp}\' + ExpandConstant('{#DotNETInstaller}'));
     
     Result := Exec(ExpandConstant('{tmp}\{#DotNETInstaller}'), '', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
-  end
-  else
+  end;
+  if not Result then
+    Exit;
+    
+  // Add other dependencies here
+  (*if DependencyToInstall_XXX then
   begin
-    Result := True; // .NET is already installed
+    ??
+  end;
+  if not Result then
+    Exit;*)
+    
+end;
+
+// CreateDependenciesPage ********************************************************************** 
+procedure CreateDependenciesPage;
+begin
+  DependencyPage := CreateCustomPage(wpSelectDir, 'Install Dependency', 
+      'The required dependencies are not installed on your system. If you continue, an automatic installation will begin.');
+    
+  DependencyListBox := TNewListBox.Create(DependencyPage);
+  DependencyListBox.Top := ScaleY(8);
+  DependencyListBox.Height := ScaleY(97);
+  DependencyListBox.Anchors := [akLeft, akTop, akRight, akBottom];
+  DependencyListBox.Width := DependencyPage.SurfaceWidth;
+  DependencyListBox.Parent := DependencyPage.Surface;
+end;
+
+// CheckDependencies ********************************************************************** 
+procedure CheckDependencies;
+begin  
+    
+  // dotnet
+  if not IsDotNetInstalled(ExpandConstant('{#DotNETVersion}')) then
+  begin
+    DependencyToInstall_Dotnet := True;
+    DependencyInstallationRequired := True;
+    
+    DependencyListBox.Items.Add(ExpandConstant('{#DotNETVersion}'));
+    DependencyListBox.ItemIndex := 0;
+  end;
+  
+  // Add other dependencies here
+  if False then
+  begin
+    //DependencyToInstall_XXX := True;
+    DependencyInstallationRequired := True;
+  end;
+    
+    
+    
+  // Remove Dependency page if not needed
+  if not DependencyInstallationRequired then
+    DependencyPage.Free;
+end;
+
+// Wizard Initialization ********************************************************************** 
+procedure InitializeWizard;
+begin
+  
+  // Dependencies management
+  CreateDependenciesPage();
+  CheckDependencies();
+  
+end;
+
+// Wizard NextButtonClick ********************************************************************** 
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+
+  // Check if dependency page is open
+  if CurPageID = DependencyPage.ID then
+  begin
+    Result := InstallDependencies();    
+    if not Result then 
+      MsgBox('Installation of dependencies failed. Exiting setup.', mbError, MB_OK);  
+    
   end;
 end;
 
-function InitializeSetup: Boolean;
-begin
-
-  InstallDotNetIfNeeded();
-  
-  Result := True;
-end;
