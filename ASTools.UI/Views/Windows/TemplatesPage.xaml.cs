@@ -3,9 +3,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Input;
 using System.Windows.Navigation;
-using ASTools.Library;
+using MahApps.Metro.Controls;
+using Ookii.Dialogs.Wpf;
 
 namespace ASTools.UI;
 
@@ -31,10 +32,15 @@ public partial class TemplatesPage : Page
             if (i>100) throw new Exception($"App non started");
         }
         
-        workingDirectoryTextBox.Text = App.Arguments.WorkingDir ?? "Insert a valid path here!";
+        workingDirectoryTextBox.Text = App.Arguments.WorkingDir;
 
         // Load templates list at window opening
+        RefreshTemplates();
         LoadTemplatesList();
+    }
+    private static void RefreshTemplates()
+    {
+        App.ASToolsSendCommand("templates --update-all");
     }
     public void LoadTemplatesList()
     {
@@ -86,7 +92,10 @@ public partial class TemplatesPage : Page
     private static void KeywordSendValueToASTools(KeywordDataModel keyword)
     {
         // Send command
-        App.ASToolsSendCommand($"templates --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");                   
+        if (keyword.Value != null)
+            App.ASToolsSendCommand($"templates --k-name \"{keyword.Keyword}\" --k-value \"{keyword.Value}\"");      
+        else             
+            App.ASToolsSendCommand($"templates --k-name \"{keyword.Keyword}\"");      
     }
     private void ExecuteButton_Click(object sender, RoutedEventArgs e)
     {
@@ -125,41 +134,53 @@ public partial class TemplatesPage : Page
     } 
     private void TemplatesListGrid_OpenFolder_Click(object sender, RoutedEventArgs e)
     {        
-        if (templatesListGrid.SelectedItem != null)
+        if (templatesListGrid.SelectedItem == null) return;
+        
+        var template = (TemplateDataModel)templatesListGrid.SelectedItem;
+        
+        if (!Directory.Exists(template.Path)) throw new Exception($"Invalid repository path");
+
+        Process.Start(new ProcessStartInfo
         {
-            var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
-            
-            if (!string.IsNullOrEmpty(loadedTemplate.Path))
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = loadedTemplate.Path,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-        }        
+            FileName = template.Path,
+            UseShellExecute = true,
+            Verb = "open"
+        });     
     }
     private void TemplatesListGrid_Delete_Click(object sender, RoutedEventArgs e)
     {
-        if (templatesListGrid.SelectedItem != null)
-        {
-            var loadedTemplate = (TemplateDataModel)templatesListGrid.SelectedItem;
-            
-            if (!string.IsNullOrEmpty(loadedTemplate.Path))
-            {
-                var result = MessageBox.Show("Are you sure? This oepration cannot be undone.", 
-                                            $"You are deleting {loadedTemplate.Name}.", 
-                                            MessageBoxButton.YesNo, 
-                                            MessageBoxImage.Question);
+        if (templatesListGrid.SelectedItem == null) return;
 
-                if (result == MessageBoxResult.Yes)
-                {
-                    App.ASToolsSendCommand($"templates --delete-name \"{loadedTemplate.Name}\" --delete-repo \"{loadedTemplate.RepositoryName}\"");
-                    LoadTemplatesList();
-                }
-            }
+        var template = (TemplateDataModel)templatesListGrid.SelectedItem;
+        
+        if (!Directory.Exists(template.Path)) throw new Exception($"Invalid template path");
+        
+        var result = MessageBox.Show("Are you sure? This operation cannot be undone.", 
+                                    $"You are deleting {template.Name}.", 
+                                    MessageBoxButton.YesNo, 
+                                    MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            App.ASToolsSendCommand($"templates --delete-name \"{template.Name}\" --delete-repo \"{template.RepositoryName}\"");
+            LoadTemplatesList();
+        }   
+    }
+    private void KeywordsListGrid_Reset_Click(object sender, RoutedEventArgs e)
+    {        
+        if (keywordsListGrid.SelectedItem == null) return;
+        
+        var keyword = (KeywordDataModel)keywordsListGrid.SelectedItem;
+        
+        KeywordsList.First(_ => _.Keyword == keyword.Keyword).Value = null;
+    }
+    private void BrowseButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new VistaFolderBrowserDialog();
+
+        if (dialog.ShowDialog() ?? false)
+        {
+            workingDirectoryTextBox.Text = dialog.SelectedPath;
         }
     }
-    
 }

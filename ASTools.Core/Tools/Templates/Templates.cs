@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Xml;
 using System.Xml.Serialization;
 using ASTools.Library;
@@ -146,7 +147,7 @@ namespace ASTools.Core.Tools.Templates
     }
     public class RepositoryInfo
     {
-        private readonly string _name;
+        private string _name;
         public string Name {get => _name;}
         private readonly string _path;
         public string Path {get => _path;}
@@ -190,6 +191,10 @@ namespace ASTools.Core.Tools.Templates
             
         } 
 
+        public void Rename(string newName)
+        {
+            _name = newName;
+        }
     }
     
     public class Logic
@@ -244,9 +249,9 @@ namespace ASTools.Core.Tools.Templates
 
             if (commands.Exec && commands.ExecWorkingDir == null) throw new Exception($"Incomplete command");
 
-            if (commands.KeywordInsertName == null ^ commands.KeywordInsertValue == null) throw new Exception($"Incomplete command");
-
             if (commands.DeleteTemplateName == null ^ commands.DeleteTemplateRepo == null) throw new Exception($"Incomplete command");
+
+            if (commands.RenameRepoNewName == null ^ commands.RenameRepoActName == null) throw new Exception($"Incomplete command");
 
         }
         private void CommandRepositoryAdd(string name, string path)
@@ -318,7 +323,6 @@ namespace ASTools.Core.Tools.Templates
         {
             if (_template == null) throw new Exception($"No template loaded"); 
             if (name == null) throw new Exception($"No keyword name provided");
-            if (value == null) throw new Exception($"No keyword value provided");
                                                        
             _template.SetKeywordValue(new TemplateConfigClass.KeywordClass(){ID = name,Value = value});               
         }
@@ -342,7 +346,64 @@ namespace ASTools.Core.Tools.Templates
                 _repositoriesInfo.First(_ => _.Name == repository).UpdateTemplatesInfo();
 
         }
-        
+        private void CommandUpdateAll()
+        {
+            InitRepositoriesInfo();
+        }
+        private void CommandRenameTemplate(string newName, string? actName, string? actRepo)
+        {
+            // Retrieve missing information from loaded template
+            if (actName == null || actRepo == null)
+            {
+                if (_template == null) throw new Exception($"No template loaded");
+                else
+                {
+                    actName = _template.TemplateInfo.Name;
+                    actRepo = _template.TemplateInfo.Repository?.Name;
+                }
+            }
+            if (actName == null || actRepo == null) throw new Exception($"Failed to rename template - 1");
+
+            // Retrieve path of actual and future template
+            var actTemplatePath = _repositoriesInfo.First(_ => _.Name == actRepo).Templates.First(_ => _.Name == actName).Path;
+            DirectoryInfo actTemplate = new(actTemplatePath);            
+            if (actTemplate.Parent == null) throw new Exception($"Failed to rename template - 2");            
+            var newTemplatePath = Path.Combine(actTemplate.Parent.FullName,newName);
+            Directory.CreateDirectory(newTemplatePath);
+            foreach (var directory in actTemplate.GetDirectories())
+                Utilities.Copy(newTemplatePath,directory.FullName);
+            foreach (var file in actTemplate.GetFiles())
+                Utilities.Copy(newTemplatePath,file.FullName);     
+             
+            // Delete the old template
+            Directory.Delete(actTemplatePath,true);            
+
+            // Restore repository templates list
+            _repositoriesInfo.First(_ => _.Name == actRepo).UpdateTemplatesInfo();
+            
+            // Rename the loaded template if available
+            if (_template != null && _template.TemplateInfo.Name == actName && _template.TemplateInfo.Repository?.Name == actRepo)
+                _template.Rename(new(_repositoriesInfo.First(_ => _.Name == actRepo),newName));
+        }
+        private void CommandRenameRepository(string newName, string actName)
+        {
+            if (_repositoriesInfo.Any(_ => _.Name == newName)) throw new Exception($"Repository name already used");
+
+            var iniFile = new IniFile(_configFilePath);
+
+            for (int i = 1; ; i++)
+            {
+                string tmpRepositoryString = iniFile.Read("Templates", $"Repository{i}");
+                if (tmpRepositoryString.Split('|')[0] == actName )
+                {
+                    iniFile.DeleteKey("Templates",$"Repository{i}");                    
+                    iniFile.Write("Templates", $"Repository{i}",$"{newName}|{tmpRepositoryString.Split('|')[1]}");
+                    break;
+                }
+            }
+            _repositoriesInfo.First(_ => _.Name == actName).Rename(newName);
+        }
+
         // Templates - Console
         private void ConsoleCommands(Command.Templates commands)
         {
@@ -354,6 +415,7 @@ namespace ASTools.Core.Tools.Templates
             else if (commands.LoadedTemplate) ConsoleCommandLoadedTemplate();   
             else if (commands.UnloadTemplate) CommandUnloadTemplate();    
             else if (commands.DeleteTemplateName != null && commands.DeleteTemplateRepo != null) CommandDeleteTemplate(commands.DeleteTemplateName,commands.DeleteTemplateRepo);         
+            else if (commands.UpdateAll) CommandUpdateAll();  
             else if (commands.Exec && commands.ExecWorkingDir != null) ConsoleCommandExec(commands.ExecWorkingDir);          
             else if (commands.KeywordsList) ConsoleCommandKeywordsList();  
             else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue); 
@@ -361,7 +423,9 @@ namespace ASTools.Core.Tools.Templates
             else if (commands.RepositoriesList) ConsoleCommandRepositoriesList(); 
             else if (commands.RepositoryAdd != null && commands.RepositoryAddPath != null) CommandRepositoryAdd(commands.RepositoryAdd,commands.RepositoryAddPath); 
             else if (commands.RepositoryRemove != null) CommandRepositoryRemove(commands.RepositoryRemove); 
-                  
+            else if (commands.RenameTemplateNewName != null) CommandRenameTemplate(commands.RenameTemplateNewName,commands.RenameTemplateActName,commands.RenameTemplateActRepo); 
+            else if (commands.RenameRepoNewName != null && commands.RenameRepoActName != null) CommandRenameRepository(commands.RenameRepoNewName,commands.RenameRepoActName); 
+           
         }
         private void ConsoleWriteTemplatesList()
         {
@@ -442,6 +506,7 @@ namespace ASTools.Core.Tools.Templates
             else if (commands.LoadedTemplate) UICommandLoadedTemplate();   
             else if (commands.UnloadTemplate) CommandUnloadTemplate();     
             else if (commands.DeleteTemplateName != null && commands.DeleteTemplateRepo != null) CommandDeleteTemplate(commands.DeleteTemplateName,commands.DeleteTemplateRepo);         
+            else if (commands.UpdateAll) CommandUpdateAll();  
             else if (commands.Exec && commands.ExecWorkingDir != null) UICommandExec(commands.ExecWorkingDir);    
             else if (commands.KeywordsList) UICommandKeywordsList(); 
             else if (commands.KeywordInsertName != null) CommandKeywordInsert(commands.KeywordInsertName, commands.KeywordInsertValue);    
@@ -449,7 +514,9 @@ namespace ASTools.Core.Tools.Templates
             else if (commands.RepositoriesList) UICommandRepositoriesList();    
             else if (commands.RepositoryAdd != null && commands.RepositoryAddPath != null) CommandRepositoryAdd(commands.RepositoryAdd,commands.RepositoryAddPath); 
             else if (commands.RepositoryRemove != null) CommandRepositoryRemove(commands.RepositoryRemove); 
-                      
+            else if (commands.RenameTemplateNewName != null) CommandRenameTemplate(commands.RenameTemplateNewName,commands.RenameTemplateActName,commands.RenameTemplateActRepo); 
+            else if (commands.RenameRepoNewName != null && commands.RenameRepoActName != null) CommandRenameRepository(commands.RenameRepoNewName,commands.RenameRepoActName); 
+                
         }
         private void UICommandTemplatesList()
         {         
@@ -509,7 +576,7 @@ namespace ASTools.Core.Tools.Templates
         public TemplateConfigClass Config { get => _config;}
         public bool KeywordsReady {get => _config.Keywords?.All(_ => !string.IsNullOrEmpty(_.Value)) ?? true;}
         public bool Ready { get => KeywordsReady; }
-        private readonly TemplateInfo _templateInfo;
+        private TemplateInfo _templateInfo;
         public TemplateInfo TemplateInfo { get => _templateInfo;}
         
         // Constructor
@@ -707,8 +774,11 @@ namespace ASTools.Core.Tools.Templates
             else throw new Exception($"Invalid path to replace keywords: {destPath}");
 
             return replacedPath;
-        }     
-        
+        }           
+        public void Rename(TemplateInfo templateInfo)
+        {
+            _templateInfo = templateInfo; 
+        }
     }
 
 }

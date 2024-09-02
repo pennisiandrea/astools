@@ -39,74 +39,154 @@
                 BorderThickness="0,1,0,0"
                 BorderBrush="LightGray"
                 VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Auto"
-                SelectionChanged="RepositoriesListGrid_SelectionChanged"
-                Loaded="RepositoriesListGrid_Loaded">
+                HorizontalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
                         <DataGridTextColumn Header="Path" Width="2*" Binding="{Binding Path}" />
                     </DataGrid.Columns>
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Open folder" Click="RepositoriesListGrid_OpenFolder_Click"/>
+                            <MenuItem Header="Remove" Click="RepositoriesListGrid_Remove_Click"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
             </DataGrid>
         </Grid>
 
         <Separator Grid.Row="1"/>
 
-        <!-- selectedRepositoryName text box -->
-        <Grid Grid.Row="2" Margin = "5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="50" /> 
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <!-- new repository section -->
+        <Grid VerticalAlignment="Top" Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
+            <!-- title -->
             <TextBlock 
-                Text="Name"     
-                Margin="0" 
-                Grid.Column="0"
-                VerticalAlignment="Center" 
-                HorizontalAlignment="Left"/>
+                    Text="Link a new repository"  
+                    Grid.Row="0"                       
+                    FontSize="16" 
+                    Margin="0" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center"/>
+            
+            <!-- new repository data & button -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /> 
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <TextBox    
-                Name="selectedRepositoryName"
-                Margin="0"
-                Grid.Column="1"
-                VerticalAlignment="Center"/>
+                <!-- name and path -->
+                <Grid Grid.Column="0" Margin = "5">            
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" /> 
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- name -->
+                    <Grid Grid.Row="0" Margin = "0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50" /> 
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock 
+                            Text="Name"     
+                            Margin="0" 
+                            Grid.Column="0"
+                            VerticalAlignment="Center" 
+                            HorizontalAlignment="Left"/>
+
+                        <TextBox    
+                            Name="newRepositoryName"
+                            Margin="0"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"/>
+                        <!-- placeholder -->
+                        <TextBlock 
+                            Grid.Column="1" 
+                            IsHitTestVisible="False" 
+                            Text="Enter a valid repository name" 
+                            VerticalAlignment="Center" 
+                            Margin="10,0,0,0" 
+                            Foreground="DarkGray">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=newRepositoryName}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- path -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50" /> 
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock 
+                            Text="Path"     
+                            Margin="0" 
+                            Grid.Column="0"
+                            VerticalAlignment="Center" 
+                            HorizontalAlignment="Left"/>
+
+                        <TextBox    
+                            Grid.Column="1" 
+                            Name="newRepositoryPath"
+                            Margin="0"
+                            IsReadOnly="False"
+                            VerticalAlignment="Center"
+                            BorderBrush="Black" 
+                            BorderThickness="1"/>
+                        <!-- placeholder -->
+                        <TextBlock 
+                            Grid.Column="1" 
+                            IsHitTestVisible="False" 
+                            Text="Enter a valid repository path" 
+                            VerticalAlignment="Center" 
+                            Margin="10,0,0,0" 
+                            Foreground="DarkGray">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=newRepositoryPath}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                        </TextBlock>
+
+                        <Button 
+                            Grid.Column="2" 
+                            Content="..." 
+                            Width="30" 
+                            VerticalAlignment="Center" 
+                            Click="BrowseButton_Click" />
+
+                    </Grid>
+                </Grid>
+
+                <!-- new button -->
+                <Grid Grid.Column="1" Margin = "5">
+                    <Button 
+                        Name="newButton"
+                        Content="New"
+                        Margin="10"
+                        Click="NewButton_Click" />
+                </Grid>
+            </Grid>
         </Grid>
-
-        <!-- selectedRepositoryPath text box -->
-        <Grid Grid.Row="3" Margin = "5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="50" /> 
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock 
-                Text="Path"     
-                Margin="0" 
-                Grid.Column="0"
-                VerticalAlignment="Center" 
-                HorizontalAlignment="Left"/>
-
-            <TextBox    
-                Name="selectedRepositoryPath"
-                Margin="0"
-                Grid.Column="1"
-                VerticalAlignment="Center"/>
-        </Grid>
-        
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left">
-            <!-- Remove button -->
-            <Button 
-                Name="removeButton"
-                Content="Remove"
-                Margin="10"
-                Click="RemoveButton_Click" />
-
-            <!-- New button -->
-            <Button 
-                Name="newButton"
-                Content="New"
-                Margin="10"
-                Click="NewButton_Click" />
-        </StackPanel>
     </Grid>
 </mah:MetroWindow>

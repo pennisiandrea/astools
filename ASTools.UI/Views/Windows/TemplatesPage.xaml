@@ -52,7 +52,7 @@
 
         
         <!-- Templates list -->                    
-        <Grid Grid.Row="2"> 
+        <Grid VerticalAlignment="Top" Grid.Row="2"> 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -94,7 +94,7 @@
         <Separator Grid.Row="3" Background="Black"/>
 
         <!-- Keywords list -->
-        <Grid Grid.Row="4">
+        <Grid VerticalAlignment="Top" Grid.Row="4">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -122,6 +122,11 @@
                         <DataGridTextColumn Header="Keyword" Width="*" Binding="{Binding Keyword}" IsReadOnly="True" />
                         <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}" />
                     </DataGrid.Columns>
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Reset" Click="KeywordsListGrid_Reset_Click"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
             </DataGrid>
         </Grid>
         
@@ -134,10 +139,50 @@
             </Grid.ColumnDefinitions>
 
             <!-- Working directory -->
-            <TextBox    
-                Name="workingDirectoryTextBox"
-                Grid.Column="0"
-                Margin="10"/>
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox    
+                    Grid.Column="0"  
+                    Name="workingDirectoryTextBox"
+                    Margin="0,0,2,0"
+                    IsReadOnly="False"
+                    VerticalAlignment="Center"
+                    BorderBrush="DarkGray" 
+                    BorderThickness="1"                  
+                    />
+                <!-- placeholder -->
+                <TextBlock 
+                    Grid.Column="0" 
+                    IsHitTestVisible="False" 
+                    Text="Enter a valid working path" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Left" 
+                    Margin="10,0,0,0" 
+                    Foreground="DarkGray">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=workingDirectoryTextBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                </TextBlock>
+
+                <Button 
+                    Grid.Column="1" 
+                    Content="..." 
+                    Width="30" 
+                    VerticalAlignment="Center" 
+                    Click="BrowseButton_Click" />
+                
+            </Grid>
 
             <!-- Execute Button -->
             <Button 

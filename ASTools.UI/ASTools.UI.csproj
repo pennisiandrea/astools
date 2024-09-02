@@ -13,6 +13,7 @@
     <ProjectReference Include="..\ASTools.Library\ASTools.Library.csproj" />
     
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     
     <Resource Include="Resources\Templates.png" />
     <Resource Include="Resources\QuestionMark.png" />

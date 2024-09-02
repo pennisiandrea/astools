@@ -32,10 +32,25 @@ namespace ASTools.Core
             [Option("unload", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Unload the loaded template")]
             public bool UnloadTemplate { get; set; }
 
+            [Option("update-all", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Update the list of repositories and templates")]
+            public bool UpdateAll { get; set; }
+
             [Option("delete-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Delete a template - name")]
             public string? DeleteTemplateName { get; set; }
             [Option("delete-repo", Default = null, HelpText = "Delete a template - repository")]
             public string? DeleteTemplateRepo { get; set; }
+
+            [Option("rename-template-new-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Rename a template - new name")]
+            public string? RenameTemplateNewName { get; set; }
+            [Option("rename-template-act-name", Default = null, HelpText = "Rename a template - actual name")]
+            public string? RenameTemplateActName { get; set; }
+            [Option("rename-template-act-repo", Default = null, HelpText = "Rename a template - actual repository")]
+            public string? RenameTemplateActRepo { get; set; }
+            [Option("rename-repo-new-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Rename a repository - new name")]
+            public string? RenameRepoNewName { get; set; }
+            [Option("rename-repo-act-name", Default = null, HelpText = "Rename a repository - actual name")]
+            public string? RenameRepoActName { get; set; }
+
             
             // Templates repositories commands
             [Option("repo-list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the list of templates repositories")]
