@@ -5,7 +5,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using MahApps.Metro.Controls;
 using Ookii.Dialogs.Wpf;
 
 namespace ASTools.UI;
@@ -120,6 +119,8 @@ public partial class TemplatesPage : Page
         // Open settings page as a dialog modal
         TemplatesSettingsWindow mainWindow = new(this);
         mainWindow.ShowDialog();
+
+        templatesListGrid.Focus();
     }
     private void HomeButton_Click(object sender, RoutedEventArgs e)
     {
@@ -145,7 +146,7 @@ public partial class TemplatesPage : Page
             FileName = template.Path,
             UseShellExecute = true,
             Verb = "open"
-        });     
+        });    
     }
     private void TemplatesListGrid_Delete_Click(object sender, RoutedEventArgs e)
     {
@@ -182,5 +183,52 @@ public partial class TemplatesPage : Page
         {
             workingDirectoryTextBox.Text = dialog.SelectedPath;
         }
+        executeButton.Focus();
     }
+    private void RenameButton_Click(object sender, RoutedEventArgs e)
+    {
+        App.ASToolsSendCommand($"templates --rename-template-new-name \"{renameTextBox.Text}\"");
+        LoadTemplatesList();
+        templatesListGrid_ContextMenu.IsOpen = false; // The click on the rename button does't trigger the automatic closure of context menu
+    }
+    private void RenameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // The visibility of the placeholder, in this specific case cannot be 
+        // done via bindings directly on the xaml file due to namescope problems
+
+        if (string.IsNullOrWhiteSpace(renameTextBox.Text))
+        {
+            placeholderRenameTextBox.Visibility = Visibility.Visible;
+            renameButton.IsEnabled = false;
+        }
+        else
+        {
+            placeholderRenameTextBox.Visibility = Visibility.Collapsed;
+            renameButton.IsEnabled = true;
+        }
+    }
+    private void RenameTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && !string.IsNullOrWhiteSpace(renameTextBox.Text))
+        {
+            renameButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+    }
+    private void MenuItemRename_SubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        // Reset rename text box when opening it
+        renameTextBox.Text = null;
+        renameButton.IsEnabled = false;
+    }
+    private void KeywordsListGrid_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            keywordsListGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            keywordsListGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+            executeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+    }
+    
 }

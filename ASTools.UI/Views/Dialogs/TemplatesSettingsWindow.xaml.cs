@@ -3,8 +3,9 @@ using MahApps.Metro.Controls;
 using System.Windows;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Input;
 using Ookii.Dialogs.Wpf;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace ASTools.UI;
 
@@ -63,7 +64,10 @@ public partial class TemplatesSettingsWindow : MetroWindow
         
         // Select the last element of the list
         if (repositoriesListGrid.Items.Count > 0)
-            repositoriesListGrid.SelectedIndex = repositoriesListGrid.Items.Count - 1;         
+            repositoriesListGrid.SelectedIndex = repositoriesListGrid.Items.Count - 1;    
+
+        newRepositoryName.Text = null;
+        newRepositoryPath.Text = null;     
     }
     private void RepositoriesListGrid_OpenFolder_Click(object sender, RoutedEventArgs e)
     {        
@@ -105,5 +109,47 @@ public partial class TemplatesSettingsWindow : MetroWindow
         {
             newRepositoryPath.Text = dialog.SelectedPath;
         }
+        newButton.Focus();
     }
+    private void RenameButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (repositoriesListGrid.SelectedItem == null) return;
+
+        var repository = (RepositoryDataModel)repositoriesListGrid.SelectedItem;
+
+        App.ASToolsSendCommand($"templates --rename-repo-new-name \"{renameTextBox.Text}\" --rename-repo-act-name \"{repository.Name}\"");
+        LoadRepositoriesList();
+        repositoriesListGrid_ContextMenu.IsOpen = false; // The click on the rename button does't trigger the automatic closure of context menu
+        _repositoriesListChanged = true; // Schedule a refresh of repositories list on dialog closure
+    }
+    private void RenameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // The visibility of the placeholder, in this specific case cannot be 
+        // done via bindings directly on the xaml file due to namescope problems
+
+        if (string.IsNullOrWhiteSpace(renameTextBox.Text))
+        {
+            placeholderRenameTextBox.Visibility = Visibility.Visible;
+            renameButton.IsEnabled = false;
+        }
+        else
+        {
+            placeholderRenameTextBox.Visibility = Visibility.Collapsed;
+            renameButton.IsEnabled = true;
+        }
+    }
+    private void RenameTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && !string.IsNullOrWhiteSpace(renameTextBox.Text))
+        {
+            renameButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+    }
+    private void MenuItemRename_SubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        // Reset rename text box when opening it
+        renameTextBox.Text = null;
+        renameButton.IsEnabled = false;
+    }
+
 }

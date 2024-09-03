@@ -80,12 +80,50 @@
                 Loaded="TemplatesListGrid_Loaded">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Repository" Width="4*" Binding="{Binding RepositoryName}" />
-                        <DataGridTextColumn Header="Name" Width="10*" Binding="{Binding Name}" />
+                        <DataGridTextColumn Header="Name" Width="10*" Binding="{Binding Name}"/>
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
-                        <ContextMenu>
+                        <ContextMenu Name="templatesListGrid_ContextMenu">
                             <MenuItem Header="Open folder" Click="TemplatesListGrid_OpenFolder_Click"/>
                             <MenuItem Header="Delete" Click="TemplatesListGrid_Delete_Click"/>
+                            <MenuItem 
+                                Header="Rename:" 
+                                SubmenuOpened="MenuItemRename_SubmenuOpened">
+                                    <Grid Margin="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="200" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox 
+                                            Name="renameTextBox"  
+                                            Grid.Column="0"                                          
+                                            IsReadOnly="False"
+                                            VerticalAlignment="Center"
+                                            Margin="0"
+                                            TextChanged="RenameTextBox_TextChanged" 
+                                            KeyDown="RenameTextBox_KeyDown"/>
+                                        <!-- placeholder -->
+                                        <TextBlock 
+                                            Name="placeholderRenameTextBox" 
+                                            Grid.Column="0"
+                                            IsHitTestVisible="False" 
+                                            Text="Enter the new name here" 
+                                            VerticalAlignment="Center" 
+                                            HorizontalAlignment="Left" 
+                                            Margin="10,0,0,0" 
+                                            Foreground="DarkGray">
+                                        </TextBlock>
+
+                                        <Button 
+                                            Name="renameButton" 
+                                            Grid.Column="1" 
+                                            Content="Confirm" 
+                                            VerticalAlignment="Center"
+                                            IsEnabled="False" 
+                                            Click="RenameButton_Click" />
+                                    </Grid>
+                            </MenuItem>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
             </DataGrid>
@@ -117,10 +155,11 @@
                 BorderThickness="0,1,0,0"
                 BorderBrush="LightGray"
                 VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Auto">
+                HorizontalScrollBarVisibility="Auto"
+                PreviewKeyDown="KeywordsListGrid_KeyDown">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Keyword" Width="*" Binding="{Binding Keyword}" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}" />
+                        <DataGridTextColumn Header="Value" Width="2*" Binding="{Binding Value}"/>
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
                         <ContextMenu>
@@ -150,10 +189,7 @@
                     Name="workingDirectoryTextBox"
                     Margin="0,0,2,0"
                     IsReadOnly="False"
-                    VerticalAlignment="Center"
-                    BorderBrush="DarkGray" 
-                    BorderThickness="1"                  
-                    />
+                    VerticalAlignment="Center"/>
                 <!-- placeholder -->
                 <TextBlock 
                     Grid.Column="0" 
@@ -176,6 +212,7 @@
                 </TextBlock>
 
                 <Button 
+                    Name="browserButton"
                     Grid.Column="1" 
                     Content="..." 
                     Width="30" 

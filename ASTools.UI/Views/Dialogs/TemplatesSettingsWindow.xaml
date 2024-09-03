@@ -45,9 +45,49 @@
                         <DataGridTextColumn Header="Path" Width="2*" Binding="{Binding Path}" />
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
-                        <ContextMenu>
+                        <ContextMenu Name="repositoriesListGrid_ContextMenu">
                             <MenuItem Header="Open folder" Click="RepositoriesListGrid_OpenFolder_Click"/>
                             <MenuItem Header="Remove" Click="RepositoriesListGrid_Remove_Click"/>
+                            <MenuItem 
+                                Header="Rename:" 
+                                SubmenuOpened="MenuItemRename_SubmenuOpened">
+                                    <Grid Margin="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="200" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox 
+                                            Name="renameTextBox"  
+                                            Grid.Column="0"                                          
+                                            IsReadOnly="False"
+                                            VerticalAlignment="Center"
+                                            BorderBrush="DarkGray" 
+                                            BorderThickness="1"
+                                            Margin="0"
+                                            TextChanged="RenameTextBox_TextChanged" 
+                                            KeyDown="RenameTextBox_KeyDown" />
+                                        <!-- placeholder -->
+                                        <TextBlock 
+                                            Name="placeholderRenameTextBox" 
+                                            Grid.Column="0"
+                                            IsHitTestVisible="False" 
+                                            Text="Enter the new name here" 
+                                            VerticalAlignment="Center" 
+                                            HorizontalAlignment="Left" 
+                                            Margin="10,0,0,0" 
+                                            Foreground="DarkGray">
+                                        </TextBlock>
+
+                                        <Button 
+                                            Name="renameButton" 
+                                            Grid.Column="1" 
+                                            Content="Confirm" 
+                                            VerticalAlignment="Center"
+                                            IsEnabled="False" 
+                                            Click="RenameButton_Click" />
+                                    </Grid>
+                            </MenuItem>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
             </DataGrid>
@@ -145,9 +185,7 @@
                             Name="newRepositoryPath"
                             Margin="0"
                             IsReadOnly="False"
-                            VerticalAlignment="Center"
-                            BorderBrush="Black" 
-                            BorderThickness="1"/>
+                            VerticalAlignment="Center"/>
                         <!-- placeholder -->
                         <TextBlock 
                             Grid.Column="1" 
@@ -179,13 +217,12 @@
                 </Grid>
 
                 <!-- new button -->
-                <Grid Grid.Column="1" Margin = "5">
-                    <Button 
-                        Name="newButton"
-                        Content="New"
-                        Margin="10"
-                        Click="NewButton_Click" />
-                </Grid>
+                <Button     
+                    Grid.Column="1"                    
+                    Name="newButton"
+                    Content="New"
+                    Margin="5"
+                    Click="NewButton_Click" />
             </Grid>
         </Grid>
     </Grid>

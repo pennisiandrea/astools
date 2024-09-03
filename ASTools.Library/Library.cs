@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Xml;
 using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace ASTools.Library;
 
@@ -187,11 +188,11 @@ public static class Utilities
         try
         {
             DirectoryInfo dirInfo = new(path);
-            return dirInfo.GetFiles().First(file => file.Extension == ".pkg" || file.Extension == ".lby");   
+            return dirInfo.GetFiles().First(file => Constants.DescriptiveFileExtensionsAndXMLObj.Any(_ => _.Item1 == file.Extension));   
         }
         catch (System.Exception)
         {
-            throw new Exception($"Cannot find descriptive file (.pkg or .lby) in {path}");
+            throw new Exception($"Cannot find descriptive file in {path}");
         }   
     }
 
@@ -249,22 +250,19 @@ public static class Utilities
         XmlElement[] newElement = [GetDescriptiveXmlElement(type,itemName)];
 
         // Get xmlPath
-        string xmlPath = descriptiveFile.Extension switch
-        {
-            ".pkg" => "/ns:Package/ns:Objects",
-            ".lby" => "/ns:Library/ns:Objects",
-            _ => throw new Exception($"Descriptive file extension {descriptiveFile.Extension} not supported."),
-        };
-
+        string xmlPath = Constants.DescriptiveFileExtensionsAndXMLObj.First(_ => _.Item1 == descriptiveFile.Extension).Item2;
+        
         // Add element to xml
         AddXmlElementsToFile(newElement,xmlPath,descriptiveFile.FullName);
     }
-    
+
     public static XmlElement GetDescriptiveXmlElement(string type, string name)
     {
         XmlDocument xmlDoc = new();
 
-        string? xmlString = null;
+        if (!Constants.AllowedTypes.Contains(type.ToLower())) throw new Exception($"Specified type {type} of element {name} not supported.");
+
+        string xmlString = "";
 
         switch (type.ToLower())
         {
@@ -289,14 +287,48 @@ public static class Utilities
                 break;
         }
 
-        if (xmlString == null) throw new Exception($"Specified type {type} of element {name} not supported.");
         xmlDoc.LoadXml(xmlString);
         
         if (xmlDoc.DocumentElement == null) throw new Exception($"Something went wrong generating Xml descriptive object of type {type} and name {name}");
         return xmlDoc.DocumentElement;
     }
 
+    public static bool IsFolderNameValid(string inputText)
+    {
+        // Null or empty
+        if (string.IsNullOrWhiteSpace(inputText))
+            return false;
+
+        // Max length
+        if (inputText.Length > 255)
+            return false;
+
+        // Check for invalid chars
+        string invalidChars = new(System.IO.Path.GetInvalidFileNameChars());
+        if (inputText.IndexOfAny(invalidChars.ToCharArray()) >= 0)
+            return false;
+
+        // Check for reserved names
+        string[] reservedNames = [  "CON", "PRN", "AUX", "NUL", 
+                                    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                                    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" ];
+        if (reservedNames.Contains(inputText.ToUpper()))
+            return false;
+
+        return true;
+    }
+
+    public static bool IsTextValidForIniValue(string inputText)
+    {
+        // Invalid chars to start with
+        if (inputText.StartsWith(';') || inputText.StartsWith('#'))
+            return false;
+
+        return true;
+    }
+
 }
+
 public class Models
 {
        
@@ -309,6 +341,14 @@ public static class Constants
     public const string LogErrorFileRegistryKey = "LogError";
     public const string CorePathRegistryKey = "CorePath"; 
     
-    // Others
-    public const string LogErrorFilePathDefaultValue = "astools_error.log";
+    // Significat files
+    public const string LogErrorFilePath = "astools_error.log";
+    public const string TemplateConfigFile = "template_config.xml";
+
+    // Parameters
+    public static ReadOnlyCollection<string> AllowedTypes { get => new(["package", "file", "library_binary", "library_iec", "program_iec"]);}
+    public static ReadOnlyCollection<(string,string)> DescriptiveFileExtensionsAndXMLObj 
+    { 
+        get => new([(".pkg","/ns:Package/ns:Objects"), (".lby","/ns:Library/ns:Objects")]);
+    }
 }

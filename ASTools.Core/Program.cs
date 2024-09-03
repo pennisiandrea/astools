@@ -145,7 +145,7 @@ namespace ASTools.Core
     {
         private const string EndOfCommandUI = ""; // An empty line is enough
         private static string _configFilePath = "";
-        private static string _logErrorFilePath = Constants.LogErrorFilePathDefaultValue; // Default path. It will change after GetLogErrorFilePath();
+        private static string _logErrorFilePath = Constants.LogErrorFilePath; // Default path. It will change after GetLogErrorFilePath();
         private static bool _executionByUI = false;
 
         static Program()

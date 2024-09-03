@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ASTools.Library\ASTools.Library.csproj" />
+    <ProjectReference Include="..\ASTools.Library\ASTools.Library.csproj"/>
     
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />

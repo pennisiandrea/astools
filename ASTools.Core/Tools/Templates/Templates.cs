@@ -352,6 +352,9 @@ namespace ASTools.Core.Tools.Templates
         }
         private void CommandRenameTemplate(string newName, string? actName, string? actRepo)
         {
+            if (_repositoriesInfo.First(_ => _.Name == actRepo).Templates.Any(_ => _.Name == newName) ) throw new Exception($"Template name already used");
+            if (!Utilities.IsFolderNameValid(newName)) throw new Exception($"This name cannot be used.");
+
             // Retrieve missing information from loaded template
             if (actName == null || actRepo == null)
             {
@@ -388,6 +391,9 @@ namespace ASTools.Core.Tools.Templates
         private void CommandRenameRepository(string newName, string actName)
         {
             if (_repositoriesInfo.Any(_ => _.Name == newName)) throw new Exception($"Repository name already used");
+            if (!Utilities.IsTextValidForIniValue(newName)) throw new Exception($"This name cannot be used.");
+
+            newName = newName.Replace('|', ' '); // This char is reserved by
 
             var iniFile = new IniFile(_configFilePath);
 
@@ -559,9 +565,6 @@ namespace ASTools.Core.Tools.Templates
 
     public class Template
     {   
-        // Constants
-        private const string DefaultTemplateConfigFile = "template_config.xml";
-
         // Fields & properties
         private readonly Dictionary<string,string> _configConstants = new ()
         {
@@ -593,25 +596,19 @@ namespace ASTools.Core.Tools.Templates
         {
             if (!Directory.Exists(userPath)) throw new Exception($"Path {userPath} is not valid");
 
-            CalculateConfigConstants(_templateInfo.Path, userPath);
-
-            // Replace constants in config structure:            
-            foreach (var item in _config.Instructions)
-            {
-                if(item.Destination != null) item.Destination.Path = ReplaceConstants(item.Destination.Path);
-                if(item.Source != null) item.Source.Path = ReplaceConstants(item.Source.Path);
-                if(item.XmlElements2Add != null) item.XmlElements2Add.Path = ReplaceConstants(item.XmlElements2Add.Path);                        
-            }            
-            
             // Execute instructions
             if (!Ready) throw new Exception($"Template not ready yet. Try set keywords before execute.");
+                                
+            // Compiling instructions
+            InstructionsCompile(userPath);
+
+            // Execute instructions
+            #pragma warning disable CS8602 // Null conditions checked in InstructionsCompile()
             foreach (var instruction in _config.Instructions)
             {
                 switch (instruction.Type)
                 {
-                    case "Copy":
-                        if (instruction.Source == null || instruction.Destination == null) throw new Exception($"Copy instruction failed! Invalid paths.");
-                                                        
+                    case "Copy":                              
                         string newDestPath = Utilities.Copy(instruction.Destination.Path,instruction.Source.Path);
                         if (_config.Keywords != null)
                             newDestPath = ReplaceKeywords(newDestPath,_config.Keywords);                                
@@ -631,13 +628,6 @@ namespace ASTools.Core.Tools.Templates
                         break;
 
                     case "Append":
-                        if (instruction.Source == null || instruction.Destination == null) throw new Exception($"Append instruction failed! Invalid paths.");
-                             
-                        //Since destination file should already exists I have to replace keywords in it before proceed with append command
-                        if (_config.Keywords != null)
-                            foreach (var keyword in _config.Keywords)
-                                instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                    
-                        
                         Utilities.Append(instruction.Destination.Path,instruction.Source.Path);
                         
                         if (_config.Keywords != null)
@@ -646,16 +636,99 @@ namespace ASTools.Core.Tools.Templates
                         break;
                         
                     case "AddXmlElement":
-                        if (instruction.Destination == null || instruction.XmlElements2Add == null) throw new Exception($"AddXmlElement instruction failed! Invalid path or Xml elements");
-                        
                         Utilities.AddXmlElementsToFile(instruction.XmlElements2Add.XmlElements,instruction.XmlElements2Add.Path,instruction.Destination.Path);
-                        break;
-                
-                    default:
-                        throw new Exception($"Instruction type not supported.");
+                        break;                
                 }
             }
-            
+            #pragma warning restore CS8602
+        }
+        private void InstructionsCompile(string userPath)
+        {
+            // Replace constants
+            CalculateConfigConstants(_templateInfo.Path, userPath);     
+            foreach (var item in _config.Instructions)
+            {
+                if(item.Destination != null) item.Destination.Path = ReplaceConstants(item.Destination.Path);
+                if(item.Source != null) item.Source.Path = ReplaceConstants(item.Source.Path);
+                if(item.XmlElements2Add != null) item.XmlElements2Add.Path = ReplaceConstants(item.XmlElements2Add.Path);                        
+            }  
+
+            // Replace keywords on the destination side (source side doen't exist yet!)
+            if (_config.Keywords != null)
+            {
+                foreach (var instruction in _config.Instructions)
+                {
+                    if (instruction.Destination != null)
+                        foreach (var keyword in _config.Keywords)
+                            instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                            
+                }
+            }
+
+            // Check for errors
+            foreach (var instruction in _config.Instructions)
+            {
+                switch (instruction.Type)
+                {
+                    case "Copy":
+                        if (instruction.Source == null) 
+                            throw new Exception($"Instruction Copy error - Invalid source");
+
+                        if (instruction.Destination == null) 
+                            throw new Exception($"Instruction Copy error - Invalid destination");
+                            
+                        if (File.Exists(instruction.Source.Path)) 
+                        {
+                            // If source is a file the destination must be a directory
+                            if(!Directory.Exists(instruction.Destination.Path)) 
+                                throw new Exception($"Instruction Copy error - Invalid destination"); 
+                        } 
+                        else 
+                        {
+                            // If source is not a file, it must be a directory
+                            if (!Directory.Exists(instruction.Source.Path)) 
+                                throw new Exception($"Instruction Copy error - Invalid source"); 
+
+                            // If source is a directory it must have a valid name for a directory 
+                            if (_config.Keywords != null)     
+                            {      
+                                string newDestinationName = Path.GetFileName(instruction.Destination.Path)??""; 
+                                foreach (var keyword in _config.Keywords)
+                                    newDestinationName = newDestinationName.Replace(keyword.ID,keyword.Value);
+                                if (!Utilities.IsFolderNameValid(newDestinationName))
+                                    throw new Exception($"Instruction Copy error - Invalid keyword");                          
+                            }
+                        }
+
+                        if (instruction.Source.Type != null)
+                        {
+                            if (!Constants.AllowedTypes.Contains(instruction.Source.Type.ToLower()))
+                                throw new Exception($"Instruction Copy error - Invalid type");                            
+                        } 
+
+                        break;
+
+                    case "Append":
+                        if (instruction.Source == null || !File.Exists(instruction.Source.Path)) 
+                            throw new Exception($"Instruction Append error - Invalid source");
+
+                        if (instruction.Destination == null || !File.Exists(instruction.Destination.Path)) 
+                            throw new Exception($"Instruction Append error - Invalid destination"); 
+                        
+                        break;
+
+                    case "AddXmlElement":
+                        if (instruction.Destination == null || !File.Exists(instruction.Destination.Path))
+                            throw new Exception($"Instruction AddXmlElement error - Invalid source");
+
+                        if (instruction.XmlElements2Add == null)
+                            throw new Exception($"Instruction AddXmlElement error - Invalid xml element");
+     
+                        break;
+
+                    default: 
+                        throw new Exception($"Invalid instruction type {instruction.Type}");          
+                }
+            }  
         }
         public void SetKeywordValue(TemplateConfigClass.KeywordClass keyword)
         {
@@ -670,7 +743,7 @@ namespace ASTools.Core.Tools.Templates
         private void CalculateConfigConstants(string templatePath, string userPath)
         {
             // These constants are fixed
-            _configConstants["$CONFIG_FILE_NAME"] = DefaultTemplateConfigFile;
+            _configConstants["$CONFIG_FILE_NAME"] = Constants.TemplateConfigFile;
 
             _configConstants["$TEMPLATE_PATH"] = templatePath;
 
@@ -699,7 +772,7 @@ namespace ASTools.Core.Tools.Templates
         }
         private static TemplateConfigClass GetConfig(string templatePath)
         {
-            string configFileFullName = Path.Combine(templatePath,DefaultTemplateConfigFile);
+            string configFileFullName = Path.Combine(templatePath,Constants.TemplateConfigFile);
             if (!File.Exists(configFileFullName)) throw new Exception($"{configFileFullName} file not found!");
             
             XmlSerializer serializer = new(typeof(TemplateConfigClass));

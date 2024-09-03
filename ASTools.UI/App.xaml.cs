@@ -62,7 +62,7 @@ public partial class App : Application
     }; 
     public static Command Arguments {get; private set;} = null!;
     private Thread? _astoolsMonitorErrorsThread;
-    private static string _logErrorFilePath = Constants.LogErrorFilePathDefaultValue;
+    private static string _logErrorFilePath = Constants.LogErrorFilePath;
     private static ErrorWindow? _errorWindow;
     public static bool AppStarted {get; private set;}
     
