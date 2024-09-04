@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using CommandLine;
 using System.Xml;
 using System.Xml.Serialization;
 using ASTools.Library;
@@ -6,6 +6,72 @@ using ConsoleTables;
 
 namespace ASTools.Core.Tools.Templates
 {
+    
+    // Templates module
+    [Verb("templates", HelpText = "Send command to Templates module")]
+    public class TemplatesOptions 
+    {      
+        [Option("load-template", Default = null, HelpText = "Load a very specific template providing the name of the template")]
+        public string? LoadTemplate { get; set; }
+        [Option("load-template-repo", Default = null, HelpText = "Load a very specific template providing the name of the repository")]
+        public string? LoadTemplateRepo { get; set; }
+        [Option("loaded", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the path of the loaded template")]
+        public bool LoadedTemplate { get; set; }
+        [Option("unload", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Unload the loaded template")]
+        public bool UnloadTemplate { get; set; }
+
+        [Option("update-all", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Update the list of repositories and templates")]
+        public bool UpdateAll { get; set; }
+
+        [Option("delete-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Delete a template - name")]
+        public string? DeleteTemplateName { get; set; }
+        [Option("delete-repo", Default = null, HelpText = "Delete a template - repository")]
+        public string? DeleteTemplateRepo { get; set; }
+
+        [Option("rename-template-new-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Rename a template - new name")]
+        public string? RenameTemplateNewName { get; set; }
+        [Option("rename-template-act-name", Default = null, HelpText = "Rename a template - actual name")]
+        public string? RenameTemplateActName { get; set; }
+        [Option("rename-template-act-repo", Default = null, HelpText = "Rename a template - actual repository")]
+        public string? RenameTemplateActRepo { get; set; }
+        [Option("rename-repo-new-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Rename a repository - new name")]
+        public string? RenameRepoNewName { get; set; }
+        [Option("rename-repo-act-name", Default = null, HelpText = "Rename a repository - actual name")]
+        public string? RenameRepoActName { get; set; }
+        
+        // Templates repositories commands
+        [Option("repo-list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the list of templates repositories")]
+        public bool RepositoriesList { get; set; }
+        [Option("repo-add", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Name of the repository to add")]
+        public string? RepositoryAdd { get; set; }
+        [Option("repo-add-path", Default = null, HelpText = "Path of the Repository to add")]
+        public string? RepositoryAddPath { get; set; }
+        [Option("repo-remove", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Remove a repository by name")]
+        public string? RepositoryRemove { get; set; }
+
+        // Templates list command
+        [Option("list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print the list of templates")]
+        public bool TemplatesList { get; set; }
+
+        // Execute command
+        [Option("exec", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Execute a template")]
+        public bool Exec { get; set; }
+        [Option("exec-working-dir", Default = null, HelpText = "Working directory where execute the template")]
+        public string? ExecWorkingDir { get; set; }
+
+        // Keywords commands
+        [Option("k-list", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Print keywords list")]
+        public bool KeywordsList { get; set; }
+        [Option("k-name", SetName = "mutual_exclusive_commands", Default = null, HelpText = "Name of the keyword to insert")]
+        public string? KeywordInsertName { get; set; }
+        [Option("k-value", Default = null, HelpText = "Name of the keyword to insert")]
+        public string? KeywordInsertValue { get; set; }
+        [Option("k-clean", SetName = "mutual_exclusive_commands", Default = false, HelpText = "Clean recorded keywords")]
+        public bool KeywordsClean { get; set; }
+
+    }
+
+
     [XmlRoot("Template")]
     public class TemplateConfigClass
     {
@@ -232,14 +298,14 @@ namespace ASTools.Core.Tools.Templates
                 if (!_repositoriesInfo.Any(_ => _.Name == repository.Name || _.Path == repository.Path) && repository.IsValid) _repositoriesInfo.Add(repository);
             }
         }
-        public void Execute(Command.Templates commands, bool executionByUI)
+        public void Execute(TemplatesOptions commands, bool executionByUI)
         {            
             CheckCommand(commands);
             
             if(executionByUI) UICommands(commands);
             else ConsoleCommands(commands);
         }
-        private static void CheckCommand(Command.Templates commands)
+        private static void CheckCommand(TemplatesOptions commands)
         {
             // ^ == XOR
 
@@ -411,7 +477,7 @@ namespace ASTools.Core.Tools.Templates
         }
 
         // Templates - Console
-        private void ConsoleCommands(Command.Templates commands)
+        private void ConsoleCommands(TemplatesOptions commands)
         {
             //Commands typ 1
             if (commands.LoadTemplateRepo != null && commands.LoadTemplate != null) CommandLoadTemplate(commands.LoadTemplateRepo,commands.LoadTemplate);
@@ -502,7 +568,7 @@ namespace ASTools.Core.Tools.Templates
         }
 
         // Templates - UI
-        private void UICommands(Command.Templates commands)
+        private void UICommands(TemplatesOptions commands)
         {
             //Commands typ 1
             if (commands.LoadTemplateRepo != null && commands.LoadTemplate != null) CommandLoadTemplate(commands.LoadTemplateRepo,commands.LoadTemplate);    
