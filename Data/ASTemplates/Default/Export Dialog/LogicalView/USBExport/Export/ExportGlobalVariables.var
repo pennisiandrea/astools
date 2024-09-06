@@ -1,0 +1,3 @@
+VAR
+    gExport : ExportType;
+END_VAR

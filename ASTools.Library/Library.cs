@@ -5,6 +5,7 @@ using System.IO;
 using System.Xml;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Text;
 
 namespace ASTools.Library;
 
@@ -180,7 +181,7 @@ public static class Utilities
         
         if (cpuName == null) throw new Exception($"{activeConfigFile} cannot find Cpu");
 
-        return Path.Combine(activeConfigFile,cpuName);
+        return Path.Combine(projectPath,"Physical",activeConfigName,cpuName);
     }
     
     public static FileInfo GetASDescriptiveFile(string path)
@@ -194,6 +195,46 @@ public static class Utilities
         {
             throw new Exception($"Cannot find descriptive file in {path}");
         }   
+    }
+
+    public static string ConvertToNamespaceIndependentXPath(string xpath)
+    {
+        // Split the input XPath by '/' to get each element
+        string[] parts = xpath.Split('/');
+
+        // Use StringBuilder to construct the new XPath
+        StringBuilder sb = new();
+
+        foreach (string part in parts)
+        {
+            if (!string.IsNullOrEmpty(part))
+            {
+                // Append the namespace-independent format for each element
+                sb.Append("/*[local-name()='").Append(part).Append("']");
+            }
+        }
+
+        // Return the transformed XPath as a string
+        return sb.ToString();
+    }
+    
+    public static bool IsXPathPresent(string xmlFilePath, string? xpath)
+    {
+        if (string.IsNullOrEmpty(xpath)) return false;
+
+        try
+        {
+            XmlDocument doc = new();
+            doc.Load(xmlFilePath);
+
+            XmlNode? node = doc.SelectSingleNode(xpath);
+
+            return node != null;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static void AddXmlElementsToFile(XmlElement[] elements, string xmlPath, string filePath)
@@ -210,11 +251,11 @@ public static class Utilities
         if (xmlDoc.DocumentElement != null)
         {
             namespaceUri = xmlDoc.DocumentElement.NamespaceURI;
-            nsmgr.AddNamespace("ns", namespaceUri);
+            nsmgr.AddNamespace(xmlDoc.DocumentElement.Prefix, namespaceUri);
         } 
     
         // Trova l'elemento specificato dal percorso XPath
-        XmlNode? parentNode = xmlDoc.SelectSingleNode(xmlPath,nsmgr);
+        XmlNode? parentNode = xmlDoc.SelectSingleNode(xmlPath);
 
         if (parentNode != null)
         {
@@ -253,7 +294,7 @@ public static class Utilities
         string xmlPath = Constants.DescriptiveFileExtensionsAndXMLObj.First(_ => _.Item1 == descriptiveFile.Extension).Item2;
         
         // Add element to xml
-        AddXmlElementsToFile(newElement,xmlPath,descriptiveFile.FullName);
+        AddXmlElementsToFile(newElement,ConvertToNamespaceIndependentXPath(xmlPath),descriptiveFile.FullName);
     }
 
     public static XmlElement GetDescriptiveXmlElement(string type, string name)
@@ -327,6 +368,111 @@ public static class Utilities
         return true;
     }
 
+    public class SearchFunctionClass
+    {
+        public required string ID { get; set; }
+
+        public required string TargetType { get; set; }
+        public string? TargetExtension { get; set; }
+        public string? TargetInnerText { get; set; }
+        public string? TargetInnerFile { get; set; }
+        public string? TargetInnerFileInnerText { get; set; }
+    }
+
+    public static string SearchFunctionExecute(SearchFunctionClass searchFunction, string path)
+    {
+        var functionString = "$SEARCH_FUNCTION(" + searchFunction.ID + ")";
+        int index = path.IndexOf(functionString);
+        var parentPath = path[..index];
+
+        var result = string.Empty;
+        switch (searchFunction.TargetType.ToLower())
+        {
+            case "file":
+                result = SearchFileRecursively(searchFunction,parentPath);
+                break;
+
+            case "package":
+                var package = SearchPackageRecursively(searchFunction,parentPath,true);
+                result = package + path[(index+functionString.Length)..];
+                break;
+        }
+
+        return result;
+    }
+    public static string SearchFileRecursively(SearchFunctionClass searchFunction, string path)
+    {
+        // Get directory
+        DirectoryInfo dir = new(path);
+
+        // Get files
+        FileInfo[] files = dir.GetFiles();
+                
+        // Apply TargetExtension filter
+        if (searchFunction.TargetExtension != null)
+            files = files.Where(_ => _.Extension == searchFunction.TargetExtension).ToArray();
+        
+        // Apply TargetInnerText filter
+        if (searchFunction.TargetInnerText != null)
+            files = files.Where(_ => File.ReadAllText(_.FullName).Contains(searchFunction.TargetInnerText)).ToArray();
+                                    
+        // Check if at least a file was found -> return only the first match
+        if (files.Length > 0) return files[0].FullName;
+        else
+        {
+            // Search inside folders
+            foreach (var directory in dir.GetDirectories())                
+            {
+                if (!directory.Name.StartsWith('.'))
+                {
+                    var result = SearchFileRecursively(searchFunction,directory.FullName);
+                    if ( result != string.Empty) return result;
+                }
+            }
+        }
+
+        return string.Empty;
+    }
+    public static string SearchPackageRecursively(SearchFunctionClass searchFunction, string path, bool skip)
+    {
+        // Get directories
+        DirectoryInfo dir = new(path);
+
+        if (!skip)
+        {
+            // Get files
+            FileInfo[] files = dir.GetFiles();
+                    
+            // Apply TargetInnerFile filter
+            if (searchFunction.TargetInnerFile != null)
+            {
+                files = files.Where(_ => _.Name == searchFunction.TargetInnerFile).ToArray();
+
+                if (files.Length > 0) 
+                {
+                    if (searchFunction.TargetInnerFileInnerText != null)
+                    {
+                        if (File.ReadAllText(files[0].FullName).Contains(searchFunction.TargetInnerFileInnerText))
+                            return dir.FullName;
+                    }
+                    else return dir.FullName;
+                }
+            }
+        }
+                            
+        // Search inside subfolders
+        foreach (var directory in dir.GetDirectories())                
+        {
+            if (!directory.Name.StartsWith('.'))
+            {
+                var result = SearchPackageRecursively(searchFunction,directory.FullName,false);
+                if ( result != string.Empty) return result;
+            }
+        }            
+
+        return string.Empty;
+    }
+        
 }
 
 public class Models
@@ -349,6 +495,6 @@ public static class Constants
     public static ReadOnlyCollection<string> AllowedTypes { get => new(["package", "file", "library_binary", "library_iec", "program_iec"]);}
     public static ReadOnlyCollection<(string,string)> DescriptiveFileExtensionsAndXMLObj 
     { 
-        get => new([(".pkg","/ns:Package/ns:Objects"), (".lby","/ns:Library/ns:Objects")]);
+        get => new([(".pkg","/Package/Objects"), (".lby","/Library/Objects")]);
     }
 }

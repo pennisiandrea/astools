@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<tmx version="1.4">
+  <header creationtool="B&amp;R Automation Studio" creationtoolversion="4.2" datatype="unknown" segtype="sentence" adminlang="en" srclang="en" o-tmf="TMX">
+    <note>Change the namespace to define where this text module should be located within the logical structure of your texts</note>
+    <prop type="x-BR-TS:Namespace">Source/USBExport/Export/Alarms</prop>
+  </header>
+  <body>
+    <tu tuid="ExportPrg_WAITING_ALARM_EXPORT_Fails">
+      <tuv xml:lang="en">
+        <seg>Generation of diagnostic report fails.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_OPEN_SRC_FOLDER_Fails">
+      <tuv xml:lang="en">
+        <seg>Cannot open internal Alarms directory.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_GET_SRC_FOLDER_FILE_NAMES_Fails">
+      <tuv xml:lang="en">
+        <seg>Cannot collect files from internal directory.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_CHECK_DEST_FOLDER_Fails">
+      <tuv xml:lang="en">
+        <seg>Cannot operate on external device directory.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_TRANSFER_FILES_Fails">
+      <tuv xml:lang="en">
+        <seg>Error while transfering files to external device.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_DELETE_FILES_Fails">
+      <tuv xml:lang="en">
+        <seg>Cannot delete files from internal directory.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="ExportPrg_Timeout">
+      <tuv xml:lang="en">
+        <seg>Timeout on exporting process</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>

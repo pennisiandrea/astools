@@ -1,0 +1,17 @@
+(********************************************************************
+ * COPYRIGHT -- Bernecker + Rainer
+ ********************************************************************
+ * Program: usb_link
+ * File: usb_link.var
+ * Author: niculiis
+ * Created: July 01, 2013
+ ********************************************************************
+ * Local variables of program usb_link
+ ********************************************************************)
+VAR CONSTANT
+	TEST_NAME : STRING[10] := '1T2e3s4T'; (*Do not change!*)
+	MAX_USB_DEV : USINT := 6; (*Number of USB devices to be used contemporaneous*)
+END_VAR
+VAR
+	usb_link : usb_link_typ; (*main control*)
+END_VAR

@@ -90,11 +90,11 @@ namespace ASTools.Core
         }
 
         static void Main(string[] argv)
-        {         
+        {        
             _configFilePath = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.ConfigFileRegistryKey);
             _logErrorFilePath = Utilities.GetStringKeyFromRegistry(Constants.RegistryMainPath,Constants.LogErrorFileRegistryKey);
 
-            Tools.Templates.Logic TemplatesLogic = new(_configFilePath); 
+            Logic TemplatesLogic = new(_configFilePath); 
 
             string? newCmd;
             List<string> listNewCmd = [.. argv];

@@ -1,0 +1,13 @@
+VAR
+	MachineState : MachineStateType;
+	Internal : InternalType;
+	FolderIdent : UDINT;
+	DirReadExData : fiDIR_READ_EX_DATA;
+END_VAR
+VAR CONSTANT
+	MAX_FILE_IDX : UINT := 500;
+END_VAR
+VAR
+	DestinationFileName : STRING[80];
+	ActFileNum : UINT;
+END_VAR

@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ddef:Dialog xmlns:ddef="http://www.br-automation.com/iat2015/dialogDefinition/v2" id="dialog_export" layoutRefId="dialog_export_layout" headerHeight="0px" backColor="rgba(235, 235, 235, 0)" showCloseButton="false">
+  <Assignments>
+    <Assignment type="Content" baseContentRefId="export_content" areaRefId="content_area" backColor="rgba(230, 230, 230, 0)" />
+  </Assignments>
+</ddef:Dialog>

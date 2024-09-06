@@ -38,7 +38,6 @@ Source: "Dependencies\{#DotNETInstaller}"; Flags: dontcopy noencryption
 ; Projects
 Source: "{#MyProjectMainPath}\ASTools.Core\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Core"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyProjectMainPath}\ASTools.UI\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.UI"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyProjectMainPath}\ASTools.Library\bin\Release\net8.0-windows\*"; DestDir: "{app}\ASTools.Library"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Data
 Source: "{#MyProjectMainPath}\Data\ASTemplates\Default\*"; DestDir: "{commonappdata}\ASTools\ASTemplates\Default"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyProjectMainPath}\Data\Config.ini"; DestDir: "{commonappdata}\ASTools"; Flags: ignoreversion onlyifdoesntexist

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+	<Keywords>
+		<Keyword ID="__visualization_id__"/>
+	</Keywords>
+
+	<SearchFunctions>
+		<SearchFunction ID="VisualizationPackage">
+			<TargetType>Package</TargetType>
+			<TargetInnerFile>Package.pkg</TargetInnerFile>
+			<TargetInnerFileInnerText>VisualizationPackage</TargetInnerFileInnerText>
+		</SearchFunction>
+					
+		<SearchFunction ID="VisualizationFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.vis</TargetExtension>
+			<TargetInnerText>id="__visualization_id__"</TargetInnerText>
+		</SearchFunction>
+				
+		<SearchFunction ID="TextConfigurationFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.textconfig</TargetExtension>
+		</SearchFunction>				
+	</SearchFunctions>
+
+	<Instructions>
+		
+		<!-- Logical view - mappView - layout -->
+		<Instruction Type="Copy">
+			<Source Type="File">$TEMPLATE_PATH\LogicalView\LayoutDialogExport.layout</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
+		</Instruction>
+		
+		<!-- Logical view - mappView - dialog -->
+		<Instruction Type="Copy">
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\Export</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\$SEARCH_FUNCTION(VisualizationPackage)\Dialogs</Destination>
+		</Instruction>
+		
+		<!-- Logical view - mappView - media -->
+		<Instruction Type="Copy">
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\ExportDialogMedia</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\Resources\Media</Destination>
+		</Instruction>
+		
+		<!-- Logical view - programs -->
+		<Instruction Type="Copy">
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\USBExport</Source>
+			<Destination>$USER_PATH</Destination>
+		</Instruction>
+		
+		<!-- Configuration view - bindings -->
+		<Instruction Type="Copy">
+			<Source Type="Package">$TEMPLATE_PATH\ConfigurationView\ExportDialog</Source>
+			<Destination>$ACTIVE_CONFIGURATION_PATH\mappView</Destination>
+		</Instruction>
+		
+		<!-- Configuration view - visualization file -->
+		<Instruction Type="AddXmlElement">
+			<XmlElements2Add Path="/Visualization/BindingsSets">
+				<BindingsSet refId="export_content_binding" />
+			</XmlElements2Add>
+			<Destination>$ACTIVE_CONFIGURATION_PATH\mappView\$SEARCH_FUNCTION(VisualizationFile)</Destination>
+		</Instruction>
+		
+		<!-- Configuration view - opcua file -->
+		<Instruction Type="Copy">
+			<Source Type="File">$TEMPLATE_PATH\ConfigurationView\ExportDialogOpcUaMap.uad</Source>
+			<Destination>$ACTIVE_CONFIGURATION_PATH\Connectivity\OpcUA</Destination>
+		</Instruction>
+
+	</Instructions>
+</Template>

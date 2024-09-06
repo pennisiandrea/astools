@@ -3,11 +3,11 @@ using System.Xml;
 using System.Xml.Serialization;
 using ASTools.Library;
 using ConsoleTables;
+using System.Text.RegularExpressions;
 
 namespace ASTools.Core.Tools.Templates
-{
-    
-    // Templates module
+{    
+    // Parsing options
     [Verb("templates", HelpText = "Send command to Templates module")]
     public class TemplatesOptions 
     {      
@@ -71,13 +71,17 @@ namespace ASTools.Core.Tools.Templates
 
     }
 
-
+    // Config template file
     [XmlRoot("Template")]
     public class TemplateConfigClass
     {
         [XmlArray("Keywords")]
         [XmlArrayItem("Keyword")]
         public List<KeywordClass>? Keywords {get; set;}
+
+        [XmlArray("SearchFunctions")]
+        [XmlArrayItem("SearchFunction")]
+        public List<Utilities.SearchFunctionClass>? SearchFunctions {get; set;}
 
         [XmlArray("Instructions")]
         [XmlArrayItem("Instruction")]
@@ -89,36 +93,30 @@ namespace ASTools.Core.Tools.Templates
             [XmlAttribute("ID")]
             public required string ID { get; set; }
             
-            [XmlText]
             public string? Value { get; set; }
 
             public override string ToString() => $"ID:{ID}\tValue:{Value}";
-        }
+        }     
         public class InstructionClass
         {
             [XmlAttribute("Type")]
             public required string Type { get; set; }
 
-            [XmlElement("Source")]
             public SourceClass? Source { get; set; }
-
-            [XmlElement("Destination")]
-            public DestinationClass? Destination { get; set; }
-
-            [XmlElement("XmlElements2Add")]
+            public required DestinationClass Destination { get; set; }
             public XmlElements2AddClass? XmlElements2Add { get; set; }
         }
         public class SourceClass
         {
-            [XmlAttribute("Path")]
-            public required string Path { get; set; }
-
             [XmlAttribute("Type")]
             public string? Type { get; set; }
+
+            [XmlText]
+            public required string Path { get; set; }
         }
         public class DestinationClass
         {
-            [XmlAttribute("Path")]
+            [XmlText]
             public required string Path { get; set; }
         }
         public class XmlElements2AddClass
@@ -142,6 +140,21 @@ namespace ASTools.Core.Tools.Templates
                 foreach (var _ in Keywords) returnValue += $"\tID:{_.ID}\n";
             }
 
+            // Search functions
+            if (SearchFunctions != null)
+            {
+                returnValue += "\nSearch functions:\n";
+                foreach (var _ in SearchFunctions)
+                {
+                    returnValue += $"\tID:{_.ID}\n";
+                    returnValue += $"\tTargetType:{_.TargetType}\n";
+                    returnValue += $"\tTargetExtension:{_.TargetExtension}\n";
+                    returnValue += $"\tTargetInnerText:{_.TargetInnerText}\n";
+                    returnValue += $"\tTargetInnerFile:{_.TargetInnerFile}\n";
+                    returnValue += $"\tTargetInnerFileInnerText:{_.TargetInnerFileInnerText}\n\n";
+                }
+            }
+
             // Instructions
             if (Instructions != null)
             {
@@ -151,6 +164,18 @@ namespace ASTools.Core.Tools.Templates
                     switch (_.Type)
                     {
                         case "Copy":
+                            if (_.Source != null && _.Destination != null)
+                            {
+                                returnValue += $"\tType:{_.Type}\n";
+                                if (_.Source.Type != null)
+                                    returnValue += $"\tSource:{_.Source.Path}\tType:{_.Source.Type}\n";
+                                else                                
+                                    returnValue += $"\tSource:{_.Source.Path}\n";
+                                returnValue += $"\tDestination:{_.Destination.Path}\n";
+                            }
+                            break;
+
+                        case "Append":
                             if (_.Source != null && _.Destination != null)
                             {
                                 returnValue += $"\tType:{_.Type}\n";
@@ -183,6 +208,7 @@ namespace ASTools.Core.Tools.Templates
         }
     }
    
+    // Info classes
     public class TemplateInfo
     {
         private readonly RepositoryInfo? _repository;
@@ -263,6 +289,7 @@ namespace ASTools.Core.Tools.Templates
         }
     }
     
+    // Commands logic
     public class Logic
     {
         private readonly List<RepositoryInfo> _repositoriesInfo = [];
@@ -629,6 +656,7 @@ namespace ASTools.Core.Tools.Templates
 
     }
 
+    // Template object
     public class Template
     {   
         // Fields & properties
@@ -647,7 +675,7 @@ namespace ASTools.Core.Tools.Templates
         public bool Ready { get => KeywordsReady; }
         private TemplateInfo _templateInfo;
         public TemplateInfo TemplateInfo { get => _templateInfo;}
-        
+
         // Constructor
         public Template(TemplateInfo templateInfo)
         {        
@@ -666,7 +694,7 @@ namespace ASTools.Core.Tools.Templates
             if (!Ready) throw new Exception($"Template not ready yet. Try set keywords before execute.");
                                 
             // Compiling instructions
-            InstructionsCompile(userPath);
+            CompileInstructions(userPath);
 
             // Execute instructions
             #pragma warning disable CS8602 // Null conditions checked in InstructionsCompile()
@@ -708,93 +736,215 @@ namespace ASTools.Core.Tools.Templates
             }
             #pragma warning restore CS8602
         }
-        private void InstructionsCompile(string userPath)
+        private void CompileInstructions(string userPath)
+        {       
+            CompileCheckMissingData();
+
+            CompileConstants(userPath);
+
+            CompileKeywords();
+
+            CompileFunctions();
+
+            CompileCheckData();
+        }
+        private void CompileConstants(string userPath)
         {
-            // Replace constants
-            CalculateConfigConstants(_templateInfo.Path, userPath);     
+            // Replace constants in searchfunctions and instructions
+            CalculateConfigConstants(_templateInfo.Path, userPath);  
+            if (_config.SearchFunctions != null)   
+                foreach (var item in _config.SearchFunctions)
+                {
+                    if(!string.IsNullOrEmpty(item.TargetInnerText)) item.TargetInnerText = ReplaceConstants(item.TargetInnerText);
+                    if(!string.IsNullOrEmpty(item.TargetInnerFileInnerText)) item.TargetInnerFileInnerText = ReplaceConstants(item.TargetInnerFileInnerText);
+                    if(!string.IsNullOrEmpty(item.TargetInnerFile)) item.TargetInnerFile = ReplaceConstants(item.TargetInnerFile);                        
+                }
             foreach (var item in _config.Instructions)
             {
-                if(item.Destination != null) item.Destination.Path = ReplaceConstants(item.Destination.Path);
-                if(item.Source != null) item.Source.Path = ReplaceConstants(item.Source.Path);
-                if(item.XmlElements2Add != null) item.XmlElements2Add.Path = ReplaceConstants(item.XmlElements2Add.Path);                        
-            }  
-
-            // Replace keywords on the destination side (source side doen't exist yet!)
+                if(!string.IsNullOrEmpty(item.Destination.Path)) item.Destination.Path = ReplaceConstants(item.Destination.Path);
+                if(!string.IsNullOrEmpty(item.Source?.Path)) item.Source.Path = ReplaceConstants(item.Source.Path);
+                if(!string.IsNullOrEmpty(item.XmlElements2Add?.Path)) item.XmlElements2Add.Path = ReplaceConstants(item.XmlElements2Add.Path);                        
+            }
+        }
+        private void CompileKeywords()
+        {
+            // Replace keywords on searchfunctions and instructions destination side
             if (_config.Keywords != null)
-            {
+            {  
+                if (_config.SearchFunctions != null)   
+                    foreach (var item in _config.SearchFunctions)
+                    {
+                        foreach (var keyword in _config.Keywords)
+                        {
+                            if(item.TargetInnerText != null) item.TargetInnerText = item.TargetInnerText.Replace(keyword.ID,keyword.Value);  
+                            if(item.TargetInnerFileInnerText != null) item.TargetInnerFileInnerText = item.TargetInnerFileInnerText.Replace(keyword.ID,keyword.Value);
+                            if(item.TargetInnerFile != null) item.TargetInnerFile = item.TargetInnerFile.Replace(keyword.ID,keyword.Value);      
+                        }                  
+                    }
                 foreach (var instruction in _config.Instructions)
                 {
-                    if (instruction.Destination != null)
-                        foreach (var keyword in _config.Keywords)
-                            instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                            
+                    foreach (var keyword in _config.Keywords)
+                        instruction.Destination.Path = instruction.Destination.Path.Replace(keyword.ID,keyword.Value);                            
                 }
             }
+        }
+        private void CompileFunctions()
+        {
+            // Solve search functions in instructions
+            if (_config.SearchFunctions != null)
+            {   
+                // Check errors in search functions
+                foreach (var searchFunction in _config.SearchFunctions)
+                {
+                    if (string.IsNullOrEmpty(searchFunction.ID)) 
+                        throw new Exception($"SearchFunction {1+_config.SearchFunctions.IndexOf(searchFunction)} error - Missing ID");
 
-            // Check for errors
+                    switch (searchFunction.TargetType.ToLower())
+                    {
+                        case "file":
+                            if(searchFunction.TargetExtension != null && !searchFunction.TargetExtension.StartsWith('.'))
+                                searchFunction.TargetExtension = '.' + searchFunction.TargetExtension;
+                            break;
+
+                        case "package":
+                            if(searchFunction.TargetInnerFileInnerText != null && string.IsNullOrEmpty(searchFunction.TargetInnerFile))
+                                throw new Exception($"SearchFunction {searchFunction.ID} error - TargetInnerFile is required if TargetInnerFileInnerText is used");
+                            break;
+
+                        default: throw new Exception($"SearchFunction {searchFunction.ID} error - Invalid TargetType");
+                    }                        
+                }
+
+                string pattern = @"\$SEARCH_FUNCTION\((.*?)\)";                    
+                Regex regex = new(pattern);
+
+                foreach (var instruction in _config.Instructions)
+                {                        
+                    Match match = regex.Match(instruction.Destination.Path);
+
+                    if (match.Success)
+                    {
+                        string functionID = match.Groups[1].Value;
+                        instruction.Destination.Path = Utilities.SearchFunctionExecute(_config.SearchFunctions.First(_ => _.ID == functionID),instruction.Destination.Path);
+                        if (string.IsNullOrEmpty(instruction.Destination.Path)) throw new Exception($"SearchFunction {functionID} error - Cannot find the item searched");
+                    }               
+                }
+            }
+        }
+        private void CompileCheckData()
+        {
+            // Check for errors in instructions            
             foreach (var instruction in _config.Instructions)
             {
                 switch (instruction.Type)
                 {
                     case "Copy":
-                        if (instruction.Source == null) 
-                            throw new Exception($"Instruction Copy error - Invalid source");
-
-                        if (instruction.Destination == null) 
-                            throw new Exception($"Instruction Copy error - Invalid destination");
-                            
-                        if (File.Exists(instruction.Source.Path)) 
+                        if (File.Exists(instruction.Source?.Path)) 
                         {
                             // If source is a file the destination must be a directory
                             if(!Directory.Exists(instruction.Destination.Path)) 
-                                throw new Exception($"Instruction Copy error - Invalid destination"); 
+                                throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid destination {instruction.Destination?.Path}"); 
+
+                            // Destination should not contains a file with the same name
+                            if (true) // Put here overwrite condition
+                            {
+                                if (Directory.GetFiles(instruction.Destination.Path).Any(_ => Path.GetFileName(_) == Path.GetFileName(instruction.Source?.Path)))
+                                    throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - The file {Path.GetFileName(instruction.Source?.Path)} already exists in {instruction.Destination?.Path}. Use Overwrite attribute to skip this error."); 
+                            }
+
                         } 
                         else 
                         {
                             // If source is not a file, it must be a directory
-                            if (!Directory.Exists(instruction.Source.Path)) 
-                                throw new Exception($"Instruction Copy error - Invalid source"); 
+                            if (!Directory.Exists(instruction.Source?.Path)) 
+                                throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid source {instruction.Source?.Path}"); 
 
-                            // If source is a directory it must have a valid name for a directory 
+                            // If source is a directory it must have a valid name for a directory, after the replacement of keywords
                             if (_config.Keywords != null)     
                             {      
-                                string newDestinationName = Path.GetFileName(instruction.Destination.Path)??""; 
+                                string newDestinationName = Path.GetFileName(instruction.Source.Path)??""; 
                                 foreach (var keyword in _config.Keywords)
                                     newDestinationName = newDestinationName.Replace(keyword.ID,keyword.Value);
                                 if (!Utilities.IsFolderNameValid(newDestinationName))
-                                    throw new Exception($"Instruction Copy error - Invalid keyword");                          
+                                    throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid name for a package {newDestinationName}");   
+                                if (Directory.GetDirectories(instruction.Destination.Path).Any(_ => Path.GetFileName(_) == newDestinationName))
+                                    throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - The package {newDestinationName} already exists in {instruction.Destination?.Path}. Use Overwrite attribute to skip this error."); 
                             }
                         }
 
-                        if (instruction.Source.Type != null)
+                        if (instruction.Source?.Type != null)
                         {
                             if (!Constants.AllowedTypes.Contains(instruction.Source.Type.ToLower()))
-                                throw new Exception($"Instruction Copy error - Invalid type");                            
+                                throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid type {instruction.Source.Type}");                            
                         } 
 
                         break;
 
                     case "Append":
-                        if (instruction.Source == null || !File.Exists(instruction.Source.Path)) 
-                            throw new Exception($"Instruction Append error - Invalid source");
-
-                        if (instruction.Destination == null || !File.Exists(instruction.Destination.Path)) 
-                            throw new Exception($"Instruction Append error - Invalid destination"); 
+                        if (!File.Exists(instruction.Destination.Path)) 
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Invalid destination {instruction.Destination?.Path}"); 
                         
                         break;
 
                     case "AddXmlElement":
-                        if (instruction.Destination == null || !File.Exists(instruction.Destination.Path))
-                            throw new Exception($"Instruction AddXmlElement error - Invalid source");
+                        if (!File.Exists(instruction.Destination.Path))
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Invalid destination {instruction.Destination?.Path}");
+                        
+                        if (instruction.XmlElements2Add?.Path != null) // Missing condition managed in CompileCheckMissingData()
+                        {
+                            // Convert xpath to a generic
+                            instruction.XmlElements2Add.Path = Utilities.ConvertToNamespaceIndependentXPath(instruction.XmlElements2Add.Path);
 
-                        if (instruction.XmlElements2Add == null)
-                            throw new Exception($"Instruction AddXmlElement error - Invalid xml element");
-     
+                            // Check if xpath is ok in the file
+                            if (!Utilities.IsXPathPresent(instruction.Destination.Path,instruction.XmlElements2Add?.Path))
+                                throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Path {instruction.XmlElements2Add?.Path} not found in {instruction.Destination?.Path}");
+                        }
                         break;
 
                     default: 
                         throw new Exception($"Invalid instruction type {instruction.Type}");          
                 }
-            }  
+            }
+        }
+        private void CompileCheckMissingData()
+        {
+            // Check for errors in instructions            
+            foreach (var instruction in _config.Instructions)
+            {
+                if (instruction.Type == null) throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} - Missing type");
+
+                switch (instruction.Type)
+                {
+                    case "Copy":
+                        if (instruction.Source == null || instruction.Source.Path == null) 
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Missing source");
+                        if (instruction.Destination == null || instruction.Destination.Path == null) 
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Missing destination");
+                          
+                        break;
+
+                    case "Append":
+                        if (instruction.Source == null || instruction.Source.Path == null) 
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Missing source");
+
+                        if (instruction.Destination == null || instruction.Destination.Path == null)
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Missing destination"); 
+                        
+                        break;
+
+                    case "AddXmlElement":
+                        if (instruction.Destination == null || instruction.Destination.Path == null)
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing destination");
+                        
+                        if (instruction.XmlElements2Add == null)
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing xml element");
+     
+                        if (instruction.XmlElements2Add.Path == null)
+                            throw new Exception($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing path");
+
+                        break;                                  
+                }
+            }
         }
         public void SetKeywordValue(TemplateConfigClass.KeywordClass keyword)
         {
@@ -841,7 +991,13 @@ namespace ASTools.Core.Tools.Templates
             string configFileFullName = Path.Combine(templatePath,Constants.TemplateConfigFile);
             if (!File.Exists(configFileFullName)) throw new Exception($"{configFileFullName} file not found!");
             
-            XmlSerializer serializer = new(typeof(TemplateConfigClass));
+            // Add attributes where required
+            XmlAttributeOverrides overrides = new();
+            // SearchFunctionClass -> ID
+            XmlAttributes SearchFunctionID = new(){ XmlAttribute = new XmlAttributeAttribute("ID")};
+            overrides.Add(typeof(Utilities.SearchFunctionClass), "ID", SearchFunctionID);
+
+            XmlSerializer serializer = new(typeof(TemplateConfigClass),overrides);
 
             using FileStream fileStream = new(configFileFullName, FileMode.Open);
             var tempConfig = (TemplateConfigClass?)serializer.Deserialize(fileStream) ?? throw new Exception($"Failed to deserialize {configFileFullName}");
@@ -906,7 +1062,8 @@ namespace ASTools.Core.Tools.Templates
                 {
                     string directoryName = directory.FullName;
                     foreach (var replacement in replacementsList) directoryName = directoryName.Replace(replacement.ID,replacement.Value);
-                    directory.MoveTo(directoryName);
+                    if (directory.FullName != directoryName)
+                        directory.MoveTo(directoryName);
                     ReplaceKeywords(directoryName, replacementsList);
                 }
             }
