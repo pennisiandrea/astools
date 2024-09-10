@@ -3,15 +3,16 @@ PROGRAM _INIT
     ResetOutputsAction;
     ResetFeedbacksAction;
     
-    //MpRecipeRegParFB(MpLink := ADR(gRecipeXmlMpLink), Enable := TRUE, PVName := ADR('g__module_name__.Parameters'));
-    
-    MachineState.NextState := INIT;
-    
+	//MpRecipeRegParFB(MpLink := ADR(gRecipesXmlMpLink), Category:=ADR('RECIPES'), Enable := TRUE, PVName := ADR('g__module_name__.Recipe'));
+	//MpSettingsRegParFB(MpLink := ADR(gSettingsXmlMpLink), Category:=ADR('SETTINGS'), Enable := TRUE, PVName := ADR('g__module_name__.Settings'));
+	 
+    MachineState.NextState := INIT;    
 END_PROGRAM
 
 PROGRAM _CYCLIC
     // Recipe
     //MpRecipeRegParFB(ErrorReset := g__module_name__.Commands.Reset AND MpRecipeRegParFB.Error);
+    //MpSettingsRegParFB(ErrorReset := g__module_name__.Commands.Reset AND MpSettingsRegParFB.Error);
 
     // Alarms
     AlarmsAction;
@@ -39,7 +40,7 @@ PROGRAM _CYCLIC
         
         ERROR:
             MachineState.TimeoutTimer.PT := T#0S; // Timeout disabled in this state
-            IF MachineState.NewTriggerState THEN
+            IF MachineState.NewStateTrigger THEN
                 ResetOutputsAction;
             ELSE
                 IF g__module_name__.Commands.Reset THEN

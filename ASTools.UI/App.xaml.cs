@@ -5,6 +5,8 @@ using System.Windows.Threading;
 using System.IO;
 using ASTools.Library;
 using CommandLine;
+using ControlzEx.Theming;
+using System.Threading.Tasks.Dataflow;
 
 namespace ASTools.UI;
 public class Command
@@ -49,6 +51,9 @@ public class Error : INotifyPropertyChanged
 
 public partial class App : Application
 {    
+    public const string DefaultTheme = "Light.Orange";
+    public const string DoneTheme = "Light.Green";
+    public const string ErrorTheme = "Light.Red";
     public static Process ASToolsProcess {get; private set;} = null!;
     private readonly ProcessStartInfo _astoolsProcessStartInfo = new()
     {
@@ -65,6 +70,7 @@ public partial class App : Application
     private static string _logErrorFilePath = Constants.LogErrorFilePath;
     private static ErrorWindow? _errorWindow;
     public static bool AppStarted {get; private set;}
+    private readonly DispatcherTimer _defaultThemeTimer = new(){Interval = TimeSpan.FromMilliseconds(1000)};
     
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -97,7 +103,7 @@ public partial class App : Application
             ASToolsProcess = Process.Start(_astoolsProcessStartInfo) ?? throw new Exception($"Cannot start ASTools.Core process");
             
             // Start a thread to monitor ASTools.Core errors
-            _astoolsMonitorErrorsThread = new(ASToolsMonitorErrors); 
+            _astoolsMonitorErrorsThread = new(() => ASToolsMonitorErrors()); 
             _astoolsMonitorErrorsThread.Start(); 
 
         });
@@ -108,6 +114,8 @@ public partial class App : Application
 
         OpenStartupPage();  
         AppStarted = true;   
+        _defaultThemeTimer.Tick += TemporaryThemeTimerEnds;
+        SetTheme(DefaultTheme,false);
     }
     private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
@@ -125,18 +133,18 @@ public partial class App : Application
     {
         File.AppendAllText(_logErrorFilePath, $"{DateTime.Now}: {message}\n{stackTrace}\n");
     }
-    private static void OpenStartupPage ()
+    private void OpenStartupPage ()
     {
         MainWindow mainWindow = new();
 
         switch (Arguments.Page)
         {
             case "templates": 
-                mainWindow.MainFrame.Navigate(new TemplatesPage());            
+                mainWindow.MainFrame.Navigate(new TemplatesPage(SetTheme));            
                 break;
 
             default:                
-                mainWindow.MainFrame.Navigate(new MainPage());                   
+                mainWindow.MainFrame.Navigate(new MainPage(SetTheme));                   
                 break;
         }
 
@@ -199,6 +207,16 @@ public partial class App : Application
             _errorWindow.Show();
         }
     }
-    
+    private void TemporaryThemeTimerEnds(object? sender, EventArgs e)
+    {
+        _defaultThemeTimer.Stop();
+        SetTheme(null, false);
+    }
+    public void SetTheme(string? name, bool temporary)
+    {
+        ThemeManager.Current.ChangeTheme(this,name??DefaultTheme);
+
+        if (temporary) _defaultThemeTimer.Start();
+    }
 }
 

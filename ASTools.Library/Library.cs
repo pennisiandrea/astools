@@ -6,6 +6,7 @@ using System.Xml;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Timers;
 
 namespace ASTools.Library;
 
@@ -189,7 +190,7 @@ public static class Utilities
         try
         {
             DirectoryInfo dirInfo = new(path);
-            return dirInfo.GetFiles().First(file => Constants.DescriptiveFileExtensionsAndXMLObj.Any(_ => _.Item1 == file.Extension));   
+            return dirInfo.GetFiles().First(file => file.Extension == Constants.DescriptiveFileExtensionPackage || file.Extension == Constants.DescriptiveFileExtensionLibrary);   
         }
         catch (System.Exception)
         {
@@ -255,9 +256,10 @@ public static class Utilities
         } 
     
         // Trova l'elemento specificato dal percorso XPath
-        XmlNode? parentNode = xmlDoc.SelectSingleNode(xmlPath);
+        var parentNode = xmlDoc.SelectSingleNode(xmlPath);
 
-        if (parentNode != null)
+        if (parentNode == null) throw new Exception($"Cannot find path {xmlPath} in file {filePath}. Failed to add xml elements");        
+        else
         {
             // Aggiunge l'elemento come figlio del nodo trovato
             foreach (var element in elements)
@@ -275,7 +277,6 @@ public static class Utilities
             xmlDoc.Save(filePath);
 
         }
-        else throw new Exception($"Cannot find path {xmlPath} in file {filePath}. Failed to add xml elements");
     } 
     
     public static void AddDescriptiveXmlElement(string addedItemPath, string type)
@@ -285,19 +286,70 @@ public static class Utilities
         FileInfo descriptiveFile = Utilities.GetASDescriptiveFile(descriptiveDirName);    
 
         // Get ItemName
-        string itemName = Path.GetFileName(addedItemPath);  
-            
-        // Get Xml element
-        XmlElement[] newElement = [GetDescriptiveXmlElement(type,itemName)];
+        string itemName = Path.GetFileName(addedItemPath); 
 
-        // Get xmlPath
-        string xmlPath = Constants.DescriptiveFileExtensionsAndXMLObj.First(_ => _.Item1 == descriptiveFile.Extension).Item2;
-        
+        string xmlPath = "";
+        XmlElement[] newElement = [];
+        if (descriptiveFile.Extension == Constants.DescriptiveFileExtensionPackage) // Package file
+        {
+            xmlPath = Constants.DescriptiveFileMainNodePackage + "/Objects";
+            
+            // Get Xml element
+            newElement = [GetDescriptiveXmlElement(type,itemName,false)]; 
+        }
+        else if(descriptiveFile.Extension == Constants.DescriptiveFileExtensionLibrary) // Library file
+        {
+            var testPath = ConvertToNamespaceIndependentXPath(Constants.DescriptiveFileMainNodeLibrary + "/Files");
+            if (IsXPathPresent(descriptiveFile.FullName,testPath)) // Content is in "File" mode
+            {
+                // In this case the descriptive file has a structure like Library/Files
+                if(type == "file")
+                {
+                    // If I am adding a file then nothing changes
+                    xmlPath = Constants.DescriptiveFileMainNodeLibrary + "/Files";
+                    
+                    // Get Xml element
+                    newElement = [GetDescriptiveXmlElement(type,itemName,true)]; 
+                }
+                else
+                {
+                    // If I am adding an element different from a file then I have to change the structure of the file to "Object" mode
+                    xmlPath = Constants.DescriptiveFileMainNodeLibrary + "/Objects";
+                    ConvertXMLFromFilesToObjects(descriptiveFile.FullName);
+
+                    // Get Xml element
+                    newElement = [GetDescriptiveXmlElement(type,itemName,false)]; 
+                }
+            }
+            else
+            {
+                xmlPath = Constants.DescriptiveFileMainNodeLibrary + "/Objects";
+
+                // Get Xml element
+                newElement = [GetDescriptiveXmlElement(type,itemName,false)];         
+            }
+
+        } 
+               
         // Add element to xml
-        AddXmlElementsToFile(newElement,ConvertToNamespaceIndependentXPath(xmlPath),descriptiveFile.FullName);
+        var newXmlPath = ConvertToNamespaceIndependentXPath(xmlPath);        
+        AddXmlElementsToFile(newElement,newXmlPath,descriptiveFile.FullName);
     }
 
-    public static XmlElement GetDescriptiveXmlElement(string type, string name)
+    public static void ConvertXMLFromFilesToObjects(string xmlFilePath)
+    {
+        var fileContent = File.ReadAllText(xmlFilePath);
+
+        fileContent = fileContent.Replace("Files>","Objects>");
+        fileContent = fileContent.Replace("Files>","Objects>");
+
+        fileContent = fileContent.Replace("<File","<Object Type=\"File\"");
+        fileContent = fileContent.Replace("File>","Object>");
+
+        File.WriteAllText(xmlFilePath,fileContent);
+    }
+
+    public static XmlElement GetDescriptiveXmlElement(string type, string name, bool fileMode)
     {
         XmlDocument xmlDoc = new();
 
@@ -312,7 +364,8 @@ public static class Utilities
                 break;
 
             case "file":   
-                xmlString = $"<Object Type=\"File\">{name}</Object>";
+                if (fileMode) xmlString = $"<File>{name}</File>";
+                else xmlString = $"<Object Type=\"File\">{name}</Object>";
                 break;
 
             case "library_binary":   
@@ -394,7 +447,8 @@ public static class Utilities
 
             case "package":
                 var package = SearchPackageRecursively(searchFunction,parentPath,true);
-                result = package + path[(index+functionString.Length)..];
+                if (!string.IsNullOrEmpty(package))
+                    result = package + path[(index+functionString.Length)..];
                 break;
         }
 
@@ -493,8 +547,8 @@ public static class Constants
 
     // Parameters
     public static ReadOnlyCollection<string> AllowedTypes { get => new(["package", "file", "library_binary", "library_iec", "program_iec"]);}
-    public static ReadOnlyCollection<(string,string)> DescriptiveFileExtensionsAndXMLObj 
-    { 
-        get => new([(".pkg","/Package/Objects"), (".lby","/Library/Objects")]);
-    }
+    public const string DescriptiveFileExtensionPackage = ".pkg";
+    public const string DescriptiveFileMainNodePackage = "/Package";
+    public const string DescriptiveFileExtensionLibrary = ".lby";
+    public const string DescriptiveFileMainNodeLibrary = "/Library";
 }

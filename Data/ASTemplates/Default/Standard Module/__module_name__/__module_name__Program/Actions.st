@@ -8,7 +8,7 @@ END_ACTION
 
 ACTION ResetOutputsAction: 
 
-    brsmemset(ADR(g__module_name__.Interface.Outputs),0,SIZEOF(g__module_name__.Interface.Outputs));
+    brsmemset(ADR(g__module_name__.HardwareIO.Outputs),0,SIZEOF(g__module_name__.HardwareIO.Outputs));
 
 END_ACTION
 
@@ -21,7 +21,7 @@ END_ACTION
 ACTION MachineStateManagementAction: 
 
     // Machine state timeout check
-    MachineState.TimeoutTimer(IN := MachineState.TimeoutTimer.PT <> T#0S AND NOT MachineState.NewTriggerState);
+    MachineState.TimeoutTimer(IN := MachineState.TimeoutTimer.PT <> T#0S AND NOT MachineState.NewStateTrigger);
     IF MachineState.TimeoutTimer.Q THEN
         
         // Throw here timeout alarms
@@ -34,8 +34,8 @@ ACTION MachineStateManagementAction:
     END_IF            
     
     // Machine state change state logic
-    MachineState.NewTriggerState := (MachineState.ActualState <> MachineState.NextState);
-    IF MachineState.NewTriggerState AND MachineState.ActualState <> WAITING_STEP_TRIGGER THEN
+    MachineState.NewStateTrigger := (MachineState.ActualState <> MachineState.NextState);
+    IF MachineState.NewStateTrigger AND MachineState.ActualState <> WAITING_STEP_TRIGGER THEN
         MachineState.OldState := MachineState.ActualState;
         
         IF MachineState.StepByStepEnable THEN

@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Template ID="StdEnableFB">
+<Template>
 	<Keywords>
-		<Keyword ID="__fb_name__"/>
-		<Keyword ID="__library_name__"/>		
+		<Keyword ID="__fb_name__" />	
 	</Keywords>
 
 	<Instructions>
 		<Instruction Type="Copy">
-			<Source Path="$TEMPLATE_PATH\__fb_name__" Type="Package"/>
-			<Destination Path="$USER_PATH" />
+			<Source Type="Package">$TEMPLATE_PATH\__fb_name__</Source>
+			<Destination>$USER_PATH</Destination>
 		</Instruction>
 		
 		<Instruction Type="Copy">
-			<Source Path="$TEMPLATE_PATH\__fb_name__Types.typ" Type="File"/>
-			<Destination Path="$USER_PATH" />
+			<Source Type="File">$TEMPLATE_PATH\__fb_name__Types.typ</Source>
+			<Destination>$USER_PATH</Destination>
 		</Instruction>
 
 		<Instruction Type="Append">
-			<Source Path="$TEMPLATE_PATH\__library_name__.fun" Type="File"/>
-			<Destination Path="$USER_PATH\__library_name__.fun" />
+			<Source Type="File">$TEMPLATE_PATH\library.fun</Source>
+			<Destination>$USER_PATH\$SEARCH_FUNCTION(LibraryFUNFile)</Destination>
 		</Instruction>
-
 	</Instructions>
+
+	<SearchFunctions>
+		<SearchFunction ID="LibraryFUNFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.fun</TargetExtension>
+		</SearchFunction>
+	</SearchFunctions>
+
 </Template>

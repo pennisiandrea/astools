@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EventBindingSet id="usb_export_content_eventbinding" xmlns="http://www.br-automation.com/iat2014/eventbinding/v2" xmlns:types="http://www.br-automation.com/iat2015/widgetTypes/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Bindings>
+    <EventBinding id="OperatorMessages">
+      <Source xsi:type="opcUa.Event" refId="::AsGlobalPV:gUSBExport.Feedbacks.StateDescriptionID" event="ValueChanged" />
+      <EventHandler condition="newValue = 0">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="Waiting USB device" />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 1">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="Select an option or remove USB device" />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 2">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="An error occures. Remove the USB device" />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 3">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="Transfering files to USB device..." />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 4">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="Deleting files from internal memory..." />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 5">
+        <Action>
+          <Target xsi:type="widgets.brease.Label.Action" contentRefId="usb_export_content" widgetRefId="OperatorMessageLabel">
+            <Method xsi:type="widgets.brease.Label.Action.SetText" text="Working on it..." />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue = 3 OR newValue = 4">
+        <Action>
+          <Target xsi:type="widgets.brease.NumericOutput.Action" contentRefId="usb_export_content" widgetRefId="ActFileNumericOutput">
+            <Method xsi:type="widgets.brease.NumericOutput.Action.SetVisible" value="true" />
+          </Target>
+        </Action>
+      </EventHandler>
+      <EventHandler condition="newValue &lt;&gt; 3 AND newValue &lt;&gt; 4">
+        <Action>
+          <Target xsi:type="widgets.brease.NumericOutput.Action" contentRefId="usb_export_content" widgetRefId="ActFileNumericOutput">
+            <Method xsi:type="widgets.brease.NumericOutput.Action.SetVisible" value="false" />
+          </Target>
+        </Action>
+      </EventHandler>
+    </EventBinding>
+    <EventBinding id="DialogAutomaticOpenClose">
+      <Source xsi:type="opcUa.Event" refId="::AsGlobalPV:gUSBExport.Feedbacks.USBDeviceConnected" event="ValueChanged" />
+      <Operand datatype="BOOL" name="DialogOpened">
+        <ReadTarget xsi:type="opcUa.NodeAction.Read" refId="::AsGlobalPV:gUSBExport.Commands.DialogOpened">
+          <Method xsi:type="opcUa.NodeAction.GetValue" />
+        </ReadTarget>
+      </Operand>
+      <EventHandler condition="newValue">
+        <Sequence>
+          <Step order="0">
+            <Action>
+              <Target xsi:type="clientSystem.Action">
+                <Method xsi:type="clientSystem.Action.OpenDialog" dialogId="usb_export_dialog" />
+              </Target>
+            </Action>
+          </Step>
+          <Step order="2">
+            <Action>
+              <Target xsi:type="opcUa.NodeAction" refId="::AsGlobalPV:gUSBExport.Commands.DialogOpened">
+                <Method xsi:type="opcUa.NodeAction.SetValueBool" value="true" />
+              </Target>
+            </Action>
+          </Step>
+        </Sequence>
+      </EventHandler>
+      <EventHandler condition="NOT newValue AND DialogOpened">
+        <Sequence>
+          <Step order="1">
+            <Action>
+              <Target xsi:type="clientSystem.Action">
+                <Method xsi:type="clientSystem.Action.CloseDialog" dialogId="usb_export_dialog" />
+              </Target>
+            </Action>
+          </Step>
+          <Step order="2">
+            <Action>
+              <Target xsi:type="opcUa.NodeAction" refId="::AsGlobalPV:gUSBExport.Commands.DialogOpened">
+                <Method xsi:type="opcUa.NodeAction.SetValueBool" value="false" />
+              </Target>
+            </Action>
+          </Step>
+        </Sequence>
+      </EventHandler>
+    </EventBinding>
+  </Bindings>
+</EventBindingSet>

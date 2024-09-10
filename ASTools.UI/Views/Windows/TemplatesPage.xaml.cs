@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
+using MahApps.Metro.Controls;
 using Ookii.Dialogs.Wpf;
 
 namespace ASTools.UI;
@@ -13,13 +14,16 @@ public partial class TemplatesPage : Page
 {
     public ObservableCollection<TemplateDataModel> TemplatesList { get; set; } = [];
     public ObservableCollection<KeywordDataModel> KeywordsList { get; set; } = [];       
-    
-    public TemplatesPage()
+
+    private readonly Action<string?,bool> _setAppTheme;
+
+    public TemplatesPage(Action<string?,bool> SetAppTheme)
     {
         InitializeComponent(); 
 
         templatesListGrid.ItemsSource = TemplatesList;  
         keywordsListGrid.ItemsSource = KeywordsList;   
+        _setAppTheme = SetAppTheme;
     }
     
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -101,10 +105,12 @@ public partial class TemplatesPage : Page
         // Send keywords
         foreach (var keyword in KeywordsList)
             KeywordSendValueToASTools(keyword);
-        
+
         // Send execute
-        App.ASToolsSendCommand($"templates --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");                   
-        
+        App.ASToolsSendCommand($"templates --exec --exec-working-dir \"{workingDirectoryTextBox.Text}\"");
+
+        _setAppTheme(App.DoneTheme,true);
+
         // Reload the template     
         if (templatesListGrid.SelectedItem == null) return;
         
@@ -125,7 +131,7 @@ public partial class TemplatesPage : Page
     private void HomeButton_Click(object sender, RoutedEventArgs e)
     {
         // Go back to main page
-        NavigationService.Navigate(new MainPage());
+        NavigationService.Navigate(new MainPage(_setAppTheme));
     }
     private void TemplatesListGrid_Loaded(object sender, RoutedEventArgs e)
     {          

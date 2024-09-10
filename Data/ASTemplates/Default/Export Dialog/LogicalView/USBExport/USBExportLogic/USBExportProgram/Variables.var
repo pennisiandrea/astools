@@ -1,0 +1,52 @@
+(*Machine state*)
+VAR
+	MachineState : MachineStateType;
+END_VAR
+(*FileIO*)
+VAR CONSTANT
+	MAX_FILE_NUM_TO_EXPORT : UINT := 250; (*Maximum number of files the module will export with one export trigger*)
+END_VAR
+VAR
+	DirCreateFB : DirCreate;
+	FileCopyFB : FileCopy;
+	FileDeleteFB : FileDelete;
+	DirOpenFB : DirOpen;
+	DirReadExFB : DirReadEx;
+	DirCloseFB : DirClose;
+	DirReadExData : fiDIR_READ_EX_DATA;
+END_VAR
+(*Others*)
+VAR
+	FolderIdent : UDINT;
+	USBDeviceConnected : BOOL;
+	DestinationFileName : STRING[80];
+	DestinationFolder : STRING[80];
+	SourceFileDevice : STRING[80];
+	TransferWithDelete : BOOL;
+	FileList : ARRAY[0..MAX_FILE_NUM_TO_EXPORT] OF STRING[80];
+	FileNum : UINT;
+	ActFileNum : UINT;
+END_VAR
+(*System dump*)
+VAR
+	SdmSystemDumpFB : SdmSystemDump;
+END_VAR
+(*Alarms*)
+VAR
+	AlarmXCoreMpLink : REFERENCE TO MpComIdentType;
+	AlarmXHistoryExportDone : REFERENCE TO BOOL;
+	AlarmXHistoryExportError : REFERENCE TO BOOL;
+	AlarmXHistoryExportCommand : REFERENCE TO BOOL;
+END_VAR
+(*FileDevices & Folders*)
+VAR CONSTANT
+	USB_FILE_DEVICE : STRING[30] := 'USB0'; (*Name of USB file device. Do not edit!*)
+	RECIPES_FOLDER : STRING[30] := 'Recipes'; (*Name of the folder where recipes will be stored in the USB device*)
+	SETTINGS_FOLDER : STRING[30] := 'Settings'; (*Name of the folder where settings will be stored in the USB device*)
+	DIAGNOSTICS_FOLDER : STRING[30] := 'Diagnostics'; (*Name of the folder where diagnostics will be stored in the USB device*)
+END_VAR
+VAR
+	RecipesFileDevice : {REDUND_UNREPLICABLE} STRING[30];
+	DiagnosticsFileDevice : {REDUND_UNREPLICABLE} STRING[30];
+	SettingsFileDevice : {REDUND_UNREPLICABLE} STRING[30];
+END_VAR

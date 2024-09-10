@@ -1,4 +1,5 @@
 using System.Windows;
+using ControlzEx.Theming;
 using MahApps.Metro.Controls;
 
 namespace ASTools.UI;
@@ -9,6 +10,7 @@ public partial class ErrorWindow : MetroWindow
     public ErrorWindow()
     {
         InitializeComponent();
+        ThemeManager.Current.ChangeTheme(this,App.ErrorTheme);
     }
     
     public void AddMessage(string error)

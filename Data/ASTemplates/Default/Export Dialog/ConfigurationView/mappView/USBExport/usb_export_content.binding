@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BindingsSet id="usb_export_content_binding" xmlns="http://www.br-automation.com/iat2015/binding/engineering/v2" xmlns:bt="http://www.br-automation.com/iat2015/bindingListTypes/engineering/v2" xmlns:be="http://www.br-automation.com/iat2015/bindingListEmbedded/engineering/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Bindings>
+	
+	<Binding mode="twoWay">
+		<Source xsi:type="opcUa" refId="::AsGlobalPV:gUSBExport.Commands.ExportDiagnostics" attribute="value" />
+		<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ExportDiagnosticsButton" attribute="value" />
+	</Binding>
+	<Binding mode="twoWay">
+		<Source xsi:type="opcUa" refId="::AsGlobalPV:gUSBExport.Commands.ExportRecipes" attribute="value" />
+		<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ExportRecipesButton" attribute="value" />
+	</Binding>	
+	<Binding mode="twoWay">
+		<Source xsi:type="opcUa" refId="::AsGlobalPV:gUSBExport.Commands.ExportSettings" attribute="value" />
+		<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ExportRecipesButton1" attribute="value" />
+	</Binding>
+	
+	<Binding mode="oneWay">
+		<Source xsi:type="opcUa" refId="::AsGlobalPV:gUSBExport.Feedbacks.TotFileNum" attribute="value" />
+		<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="TotFileNumericOutput" attribute="value" />
+	</Binding>	
+<Binding mode="twoWay">
+<Source xsi:type="opcUa" refId="::AsGlobalPV:gUSBExport.Feedbacks.ActFileNum" attribute="value" />
+<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ActFileNumericOutput" attribute="value" />
+</Binding>
+<Binding mode="twoWay">
+<Source xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ActFileNumericOutput" attribute="visible" />
+<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="SeparatorBetweenFileNumLabel" attribute="visible" />
+</Binding>
+<Binding mode="twoWay">
+<Source xsi:type="brease" contentRefId="usb_export_content" widgetRefId="ActFileNumericOutput" attribute="visible" />
+<Target xsi:type="brease" contentRefId="usb_export_content" widgetRefId="TotFileNumericOutput" attribute="visible" />
+</Binding>
+</Bindings>
+</BindingsSet>
