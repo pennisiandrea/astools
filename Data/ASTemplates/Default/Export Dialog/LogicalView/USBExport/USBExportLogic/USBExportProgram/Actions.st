@@ -24,24 +24,32 @@ END_ACTION
 
 ACTION ResetFeedbacksAction: 
 
-    brsmemset(ADR(gUSBExport.Feedbacks),0,SIZEOF(gUSBExport.Feedbacks));
+	brsmemset(ADR(gUSBExport.Feedbacks),0,SIZEOF(gUSBExport.Feedbacks));
+
+END_ACTION
+
+ACTION ResetCommandsAction: 
+
+	gUSBExport.Commands.ExportDiagnostics := FALSE;
+	gUSBExport.Commands.ExportRecipes := FALSE;
+	gUSBExport.Commands.ExportSettings := FALSE;
 
 END_ACTION
 
 ACTION MachineStateManagementAction: 
 
     // Machine state timeout check
-	MachineState.TimeoutTimer(IN := MachineState.TimeoutTimer.PT <> T#0S AND NOT MachineState.NewTriggerState);
+	MachineState.TimeoutTimer(IN := MachineState.TimeoutTimer.PT <> T#0S AND NOT MachineState.NewStateTrigger);
 	IF MachineState.TimeoutTimer.Q THEN
 		MpAlarmXSet(AlarmXCoreMpLink,'USBExport_Timeout'); // Edge alarm!  
 		MachineState.NextState := ERROR;		
 	END_IF            
     
 	// Machine state change state logic
-	MachineState.NewTriggerState := (MachineState.ActualState <> MachineState.NextState);
-	IF MachineState.NewTriggerState AND MachineState.ActualState <> WAITING_STEP_TRIGGER THEN
+	MachineState.NewStateTrigger := (MachineState.ActualState <> MachineState.NextState);
+	IF MachineState.NewStateTrigger AND MachineState.ActualState <> WAITING_STEP_TRIGGER THEN
 		MachineState.OldState := MachineState.ActualState;
-		
+        
 		IF MachineState.StepByStepEnable THEN
 			MachineState.ActualState := WAITING_STEP_TRIGGER;
 		END_IF

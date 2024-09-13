@@ -1,4 +1,0 @@
-For development:
-    Debug:      dotnet build 
-    Release:    dotnet build --configuration Runtime
-

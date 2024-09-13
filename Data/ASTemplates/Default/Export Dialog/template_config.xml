@@ -5,73 +5,59 @@
 	</Keywords>
 
 	<Instructions>		
-	
+
+		<!-- check requirements to execute the template -->
 		<Instruction Type="Check">
 			<Destinations>
-				<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
-				<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
-				<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
+				<!-- check if mappView was inserted -->
+				<Destination>$PROJECT_PATH\Logical\mappView</Destination> 
+
+				<!-- check if a visualization was inserted in the logical view -->
+				<Destination>$PROJECT_PATH\Logical\mappView\$SEARCH_FUNCTION(VisualizationPackage)</Destination> 
+
+				<!-- check if a visualization was inserted in the active configuration -->
+				<Destination>$ACTIVE_CONFIGURATION_PATH\mappView\$SEARCH_FUNCTION(VisualizationFile)</Destination>
+				
+				<!-- check if mappAlarmX is used -->
+				<Destination>$ACTIVE_CONFIGURATION_PATH\mappServices\$SEARCH_FUNCTION(mappAlarmXCoreFile)</Destination>
+								
 			</Destinations>
 		</Instruction>
 
 		<!-- Logical view - mappView - layout -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="File">$TEMPLATE_PATH\LogicalView\mappView\Layouts\USBExport.layout</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
-			</Destinations>
+			<Source Type="File">$TEMPLATE_PATH\LogicalView\mappView\Layouts\USBExport.layout</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\Layouts</Destination>
 		</Instruction>
 		
 		<!-- Logical view - mappView - dialog -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="Package">$TEMPLATE_PATH\LogicalView\mappView\Dialogs\USBExport</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$PROJECT_PATH\Logical\mappView\$SEARCH_FUNCTION(VisualizationPackage)\Dialogs</Destination>
-			</Destinations>
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\mappView\Dialogs\USBExport</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\$SEARCH_FUNCTION(VisualizationPackage)\Dialogs</Destination>
 		</Instruction>
 		
 		<!-- Logical view - mappView - media -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="Package">$TEMPLATE_PATH\LogicalView\mappView\Media\USBExport</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$PROJECT_PATH\Logical\mappView\Resources\Media</Destination>
-			</Destinations>
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\mappView\Media\USBExport</Source>
+			<Destination>$PROJECT_PATH\Logical\mappView\Resources\Media</Destination>
 		</Instruction>
 		
 		<!-- Logical view - programs -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="Package">$TEMPLATE_PATH\LogicalView\USBExport</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$PROJECT_PATH\Logical</Destination>
-			</Destinations>
+			<Source Type="Package">$TEMPLATE_PATH\LogicalView\USBExport</Source>
+			<Destination>$PROJECT_PATH\Logical</Destination>
 		</Instruction>
 		
 		<!-- Configuration view - opcua file -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="File">$TEMPLATE_PATH\ConfigurationView\OPCUA\USBExport.uad</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$ACTIVE_CONFIGURATION_PATH\Connectivity\OpcUA</Destination>	
-			</Destinations>		
+			<Source Type="File">$TEMPLATE_PATH\ConfigurationView\OPCUA\USBExport.uad</Source>
+			<Destination>$ACTIVE_CONFIGURATION_PATH\Connectivity\OpcUA</Destination>	
 		</Instruction>
 		
 		<!-- Configuration view - bindings -->
 		<Instruction Type="Copy">
-			<Sources>
-				<Source Type="Package">$TEMPLATE_PATH\ConfigurationView\mappView\USBExport</Source>
-			</Sources>
-			<Destinations>
-				<Destination>$ACTIVE_CONFIGURATION_PATH\mappView</Destination>
-			</Destinations>		
+			<Source Type="Package">$TEMPLATE_PATH\ConfigurationView\mappView\USBExport</Source>
+			<Destination>$ACTIVE_CONFIGURATION_PATH\mappView</Destination>
 		</Instruction>
 		
 		<!-- Configuration view - visualization file bindings -->
@@ -91,23 +77,20 @@
 				</XmlElementsGroup>
 			</XmlElementsGroups>
 
-			<Destinations>
-				<Destination>$ACTIVE_CONFIGURATION_PATH\mappView\$SEARCH_FUNCTION(VisualizationFile)</Destination>
-			</Destinations>		
+			<Destination>$ACTIVE_CONFIGURATION_PATH\mappView\$SEARCH_FUNCTION(VisualizationFile)</Destination>	
 		</Instruction>
 
 		<!-- Dependencies -->
-		<Instruction Type="Copy" ErrorAction="Ignore">
+		<Instruction Type="Copy" ErrorAction="Ignore" SkipKeywordReplacement="true">
 			<Sources>
-				<Source Type="Library_binary">$TEMPLATE_PATH\Dependencies\AsArSdm</Source>
-				<Source Type="Library_binary">$TEMPLATE_PATH\Dependencies\asstring</Source>
-				<Source Type="Library_binary">$TEMPLATE_PATH\Dependencies\AsUSB</Source>
-				<Source Type="Library_binary">$TEMPLATE_PATH\Dependencies\FileIO</Source>
-				<Source Type="Library_binary">$TEMPLATE_PATH\Dependencies\standard</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\AsArSdm</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\asstring</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\AsUSB</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\FileIO</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\standard</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\LogicalView\Libraries\ASBrStr</Source>
 			</Sources>
-			<Destinations>
-				<Destination>$ACTIVE_CONFIGURATION_PATH\Logical\Libraries</Destination>
-			</Destinations>		
+			<Destination>$PROJECT_PATH\Logical\Libraries</Destination>
 		</Instruction>
 
 	</Instructions>
@@ -127,6 +110,11 @@
 		<SearchFunction ID="TextConfigurationFile">
 			<TargetType>File</TargetType>
 			<TargetExtension>.textconfig</TargetExtension>
+		</SearchFunction>
+					
+		<SearchFunction ID="mappAlarmXCoreFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.mpalarmxcore</TargetExtension>
 		</SearchFunction>				
 	</SearchFunctions>
 

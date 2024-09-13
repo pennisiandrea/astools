@@ -10,7 +10,7 @@ PROGRAM _INIT
 END_PROGRAM
 
 PROGRAM _CYCLIC
-    // Recipe
+    // Recipe & Settings
     //MpRecipeRegParFB(ErrorReset := g__module_name__.Commands.Reset AND MpRecipeRegParFB.Error);
     //MpSettingsRegParFB(ErrorReset := g__module_name__.Commands.Reset AND MpSettingsRegParFB.Error);
 
@@ -45,7 +45,8 @@ PROGRAM _CYCLIC
             ELSE
                 IF g__module_name__.Commands.Reset THEN
                     g__module_name__.Commands.Reset := FALSE;
-                    MachineState.NextState := MachineState.OldState;
+                    //MachineState.NextState := MachineState.OldState;
+                    MachineState.NextState := INIT;
                 END_IF
             END_IF
             
@@ -64,5 +65,5 @@ END_PROGRAM
 
 PROGRAM _EXIT
     //MpRecipeRegParFB(Enable := FALSE);
-    
+    //MpSettingsRegParFB(Enable := FALSE);    
 END_PROGRAM

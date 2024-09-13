@@ -5,22 +5,39 @@
 	</Keywords>
 
 	<Instructions>
+
+		<!-- check requirements to execute the template -->
+		<Instruction Type="Check">
+			<Destinations>				
+				<!-- check if mappAlarmX is used -->
+				<Destination>$ACTIVE_CONFIGURATION_PATH\mappServices\$SEARCH_FUNCTION(mappAlarmXCoreFile)</Destination>								
+			</Destinations>
+		</Instruction>
+
 		<Instruction Type="Copy">
 			<Source Type="Package">$TEMPLATE_PATH\__module_name__</Source>
 			<Destination>$USER_PATH</Destination>
 		</Instruction>
 
+		<!-- Dependencies -->
 		<Instruction Type="Copy" ErrorAction="Ignore" SkipKeywordReplacement="true">
-			<Source Type="Library_binary">$TEMPLATE_PATH\Libraries\AsBrStr</Source>
+			<Sources>
+				<Source Type="Library_binary">$TEMPLATE_PATH\Libraries\AsBrStr</Source>
+				<Source Type="Library_binary">$TEMPLATE_PATH\Libraries\standard</Source>
+			</Sources>
 			<Destination>$PROJECT_PATH\Logical\Libraries</Destination>
 		</Instruction>
-
-		<Instruction Type="Copy" ErrorAction="Ignore" SkipKeywordReplacement="true">
-			<Source Type="Library_binary">$TEMPLATE_PATH\Libraries\standard</Source>
-			<Destination>$PROJECT_PATH\Logical\Libraries</Destination>
-		</Instruction>
-
 
 	</Instructions>
 	
+	
+	<SearchFunctions>		
+
+		<SearchFunction ID="mappAlarmXCoreFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.mpalarmxcore</TargetExtension>
+		</SearchFunction>	
+
+	</SearchFunctions>
+
 </Template>

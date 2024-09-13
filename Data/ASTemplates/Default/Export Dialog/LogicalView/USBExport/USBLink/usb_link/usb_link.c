@@ -3,15 +3,15 @@
  ********************************************************************
  * Program: usb_link
  * File: usb_link.c
- * Author: niculiis
+ * Author: -
  * Created: 01/07/2013
- * Description : V1.0 - 01/07/2013 - niculiis
+ * Description : V1.0 - 01/07/2013 - -
  				 This task uses AsUSB lib and FileIO lib to create a File Device Link for  
  				 USB Mass Storage Devices connected in any USB port available on target. First inserted USB mass storage
 				 will  have as FILE DEVICE NAME "USB0", the second USB mass storage will have "USB1" and so on
 				 This FILE DEVICES can be used for file handling in other tasks.
 
-				 V1.1 - 19/10/2017 - niculiis
+				 V1.1 - 19/10/2017 - -
 				 Problem: 
 				 with AR >= J4.25 when connecting USB mass storage device to AP (via SDL) the update of the outputs of FUB UsbNodeListGet(allNodes and listNodes)
 				 is delayed and not synchronous - allNodes updated before listNodes
@@ -22,8 +22,6 @@
 				 	allNodes - Total number of USB nodes on the target
 				 	listNodes - Number of USB nodes entered in the pNodeList (filter!)				
 				 
-				 				 
-
  ********************************************************************
  * Implementation of program usb_link
  ********************************************************************/

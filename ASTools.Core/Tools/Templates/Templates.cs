@@ -104,17 +104,31 @@ namespace ASTools.Core.Tools.Templates
             [XmlAttribute("SkipKeywordReplacement")]
             public bool SkipKeywordReplacement { get; set; }
 
+            // List parameters
             [XmlArray("Sources")]
             [XmlArrayItem("Source")]
             public List<SourceClass>? Sources { get; set; }
+
             [XmlArray("XmlElementsGroups")]
             [XmlArrayItem("XmlElementsGroup")]
             public List<XmlElementsGroupClass>? XmlElementsGroups { get; set; }
 
             [XmlArray("Destinations")]
             [XmlArrayItem("Destination")]
-            public required List<DestinationClass>? Destinations { get; set; }
+            public List<DestinationClass>? Destinations { get; set; }
 
+            // Single parameters. Used by user in case of definition of a single entity. 
+            // This values are transfered to list objects after the parsing of the file. Only list objects are actively used in the process.
+            [XmlElement("Source")]
+            public SourceClass? Source { get; set; } 
+
+            [XmlElement("XmlElementsGroup")]
+            public XmlElementsGroupClass? XmlElementsGroup { get; set; }
+
+            [XmlElement("Destination")]
+            public DestinationClass? Destination { get; set; }
+
+            // Methods
             public bool ErrorActionContinue => ErrorAction?.ToLower() == "continue";
             public bool ErrorActionIgnore => ErrorAction?.ToLower() == "ignore";
         }
@@ -364,6 +378,8 @@ namespace ASTools.Core.Tools.Templates
         }
         private void CommandDeleteTemplate(string name, string repository)
         {         
+            if (!_repositoriesInfo.Any(_ => _.Name == repository && _.Templates.Any(_ => _.Name == name))) throw new Exception($"Template does not exist");
+
             // Unload if loaded            
             if (_template != null && _template.TemplateInfo.Repository?.Name == repository && _template.TemplateInfo.Name == name)
                 CommandUnloadTemplate();
@@ -382,7 +398,7 @@ namespace ASTools.Core.Tools.Templates
         }
         private void CommandRenameTemplate(string newName, string? actName, string? actRepo)
         {
-            if (_repositoriesInfo.First(_ => _.Name == actRepo).Templates.Any(_ => _.Name == newName) ) throw new Exception($"Template name already used");
+            if (_repositoriesInfo.Any(_ => _.Name == actRepo && _.Templates.Any(_ => _.Name == newName))) throw new Exception($"Template name already used");
             if (!Utilities.IsFolderNameValid(newName)) throw new Exception($"This name cannot be used.");
 
             // Retrieve missing information from loaded template
@@ -395,7 +411,7 @@ namespace ASTools.Core.Tools.Templates
                     actRepo = _template.TemplateInfo.Repository?.Name;
                 }
             }
-            if (actName == null || actRepo == null) throw new Exception($"Failed to rename template - 1");
+            if (!_repositoriesInfo.Any(_ => _.Name == actRepo && _.Templates.Any(_ => _.Name == actName))) throw new Exception($"Template does not exist");
 
             // Retrieve path of actual and future template
             var actTemplatePath = _repositoriesInfo.First(_ => _.Name == actRepo).Templates.First(_ => _.Name == actName).Path;
@@ -421,9 +437,10 @@ namespace ASTools.Core.Tools.Templates
         private void CommandRenameRepository(string newName, string actName)
         {
             if (_repositoriesInfo.Any(_ => _.Name == newName)) throw new Exception($"Repository name already used");
+            if (!_repositoriesInfo.Any(_ => _.Name == actName)) throw new Exception($"Repository does not exist");
             if (!Utilities.IsTextValidForIniValue(newName)) throw new Exception($"This name cannot be used.");
 
-            newName = newName.Replace('|', ' '); // This char is reserved by
+            newName = newName.Replace('|', ' '); // This char is reserved by logic
 
             var iniFile = new IniFile(_configFilePath);
 
@@ -749,6 +766,8 @@ namespace ASTools.Core.Tools.Templates
             _compilationResult = true;
             _compilationErrors = [];
 
+            CompileAggregateSingleObjToLists();
+
             CompileCheckMissingData();
 
             CompileConstants(userPath);
@@ -768,6 +787,29 @@ namespace ASTools.Core.Tools.Templates
             }
             
         }
+        private void CompileAggregateSingleObjToLists()
+        {
+            foreach (var instruction in _config.Instructions)
+            {
+                if (instruction.Destination != null && instruction.Destinations != null)
+                {
+                    instruction.Destinations.Add(instruction.Destination);
+                    instruction.Destination = null;
+                }
+
+                if (instruction.Source != null && instruction.Sources != null)
+                {
+                    instruction.Sources.Add(instruction.Source);
+                    instruction.Source = null;
+                }
+
+                if (instruction.XmlElementsGroup != null && instruction.XmlElementsGroups != null)
+                {
+                    instruction.XmlElementsGroups.Add(instruction.XmlElementsGroup);
+                    instruction.XmlElementsGroup = null;
+                }
+            }
+        }
         private void CompileCheckMissingData()
         {
             List<TemplateConfigClass.InstructionClass> instructionsToRemove = []; 
@@ -781,14 +823,14 @@ namespace ASTools.Core.Tools.Templates
                         if (instruction.Destinations == null || instruction.Destinations.All(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Check error - Missing all destinations"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
                         else if (instruction.Destinations.Any(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Check error - Missing some sources");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;   
                             instruction.Destinations.RemoveAll(_ => string.IsNullOrEmpty(_.Path)); // Remove only destinations with errors
                         }
                         
@@ -798,21 +840,21 @@ namespace ASTools.Core.Tools.Templates
                         if (instruction.Sources == null || instruction.Sources.All(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Missing all sources"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
                         else if (instruction.Sources.Any(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Missing some sources");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;   
                             instruction.Sources.RemoveAll(_ => string.IsNullOrEmpty(_.Path)); // Remove only sources with errors
                         }
                         
                         if (instruction.Destinations == null || instruction.Destinations.Count != 1 || string.IsNullOrEmpty(instruction.Destinations[0].Path)) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Missing destination"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -822,21 +864,21 @@ namespace ASTools.Core.Tools.Templates
                         if (instruction.Sources == null || instruction.Sources.All(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Missing all sources"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
                         else if (instruction.Sources.Any(_ => string.IsNullOrEmpty(_.Path))) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Missing some sources");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;   
                             instruction.Sources.RemoveAll(_ => string.IsNullOrEmpty(_.Path)); // Remove only items with errors
                         }
 
                         if (instruction.Destinations == null || instruction.Destinations.Count != 1 || string.IsNullOrEmpty(instruction.Destinations[0].Path)) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - Missing destination"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -846,7 +888,7 @@ namespace ASTools.Core.Tools.Templates
                         if (instruction.Destinations == null || instruction.Destinations.Count != 1 || string.IsNullOrEmpty(instruction.Destinations[0].Path)) 
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing destination"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -854,21 +896,21 @@ namespace ASTools.Core.Tools.Templates
                         if (instruction.XmlElementsGroups == null || instruction.XmlElementsGroups.All(_ => string.IsNullOrEmpty(_.Path)))
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing all xml element groups or all paths");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
                         else if (instruction.XmlElementsGroups.Any(_ => string.IsNullOrEmpty(_.Path)) || instruction.XmlElementsGroups.Any(_ => _.XmlElements.Length == 0))
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - Missing some xml element groups or some paths");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                             instruction.XmlElementsGroups.RemoveAll(_ => string.IsNullOrEmpty(_.Path) || _.XmlElements.Length == 0); // Remove only items with errors                  
                         }
                         break;                                  
                 
                     default:                        
                         if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} - Missing or invalid type");
-                        _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;
+                        if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;
                         instructionsToRemove.Add(instruction);
                         break;
                 }                
@@ -955,7 +997,7 @@ namespace ASTools.Core.Tools.Templates
                     if (searchFunction == null)
                     {
                         if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} - Search function not defined");
-                        _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;
+                        if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;
                         instructionsToRemove.Add(instruction);
                         continue;
                     }
@@ -971,7 +1013,7 @@ namespace ASTools.Core.Tools.Templates
                             if(searchFunction.TargetInnerFileInnerText != null && string.IsNullOrEmpty(searchFunction.TargetInnerFile))
                             {                                    
                                 if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} searchFunction {searchFunction.ID} error - TargetInnerFile is required if TargetInnerFileInnerText is used");
-                                _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;
+                                if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;
                                 instructionsToRemove.Add(instruction);
                                 continue;
                             }
@@ -979,7 +1021,7 @@ namespace ASTools.Core.Tools.Templates
 
                         default:                       
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} searchFunction {searchFunction.ID} error - Missing or invalid TargetType");
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;
                             instructionsToRemove.Add(instruction);
                             continue;
                     }
@@ -988,7 +1030,7 @@ namespace ASTools.Core.Tools.Templates
                     if (string.IsNullOrEmpty(newPath))
                     {                 
                         if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} searchFunction {searchFunction.ID} error - Cannot resolve {destination.Path}");
-                        _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;
+                        if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;
                         instructionsToRemove.Add(instruction);
                         continue;
                     }
@@ -1028,7 +1070,7 @@ namespace ASTools.Core.Tools.Templates
                             if(!Directory.Exists(destination.Path) && !File.Exists(destination.Path))
                             {
                                 if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Check error - {destination.Path} must be an existing directory or file"); 
-                                _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                                if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                                 instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                                 continue;
                             }
@@ -1040,7 +1082,7 @@ namespace ASTools.Core.Tools.Templates
                         if(!Directory.Exists(instruction.Destinations[0].Path))
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - {instruction.Destinations[0].Path} must be an existing directory"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -1058,7 +1100,7 @@ namespace ASTools.Core.Tools.Templates
                                 if (!Constants.AllowedTypes.Contains(source.Type.ToLower()))
                                 {
                                     if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid type {source.Type}"); 
-                                    _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                                    if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                                     sourcesToRemove.Add(source);
                                     continue;
                                 }                          
@@ -1072,7 +1114,7 @@ namespace ASTools.Core.Tools.Templates
                                     if (!source.Overwrite)
                                     {
                                         if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - The file {Path.GetFileName(source.Path)} already exists in {instruction.Destinations[0]?.Path}. Use Overwrite attribute to skip this error."); 
-                                        _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                                        if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                                         sourcesToRemove.Add(source);
                                         continue;
                                     }
@@ -1084,7 +1126,7 @@ namespace ASTools.Core.Tools.Templates
                                 if (!Directory.Exists(source.Path)) 
                                 {                                    
                                     if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid source {source.Path}");
-                                    _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                                    if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                                     sourcesToRemove.Add(source);
                                     continue;
                                 }
@@ -1099,7 +1141,7 @@ namespace ASTools.Core.Tools.Templates
                                 if (!Utilities.IsFolderNameValid(newDestinationName))
                                 {                        
                                     if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - Invalid name for a package {newDestinationName}");
-                                    _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                                    if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                                     sourcesToRemove.Add(source);
                                     continue;
                                 }
@@ -1112,7 +1154,7 @@ namespace ASTools.Core.Tools.Templates
                                     if (!source.Overwrite)
                                     {  
                                         if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Copy error - The package {newDestinationName} already exists in {instruction.Destinations[0]?.Path}. Use Overwrite attribute to skip this error."); 
-                                        _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore; 
+                                        if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false; 
                                         sourcesToRemove.Add(source);
                                         continue;
                                     }
@@ -1134,7 +1176,7 @@ namespace ASTools.Core.Tools.Templates
                         if(!File.Exists(instruction.Destinations[0].Path))
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - {instruction.Destinations[0].Path} must be an existing file"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -1147,7 +1189,7 @@ namespace ASTools.Core.Tools.Templates
                             if(!File.Exists(source.Path))
                             {
                                 if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} Append error - {source.Path} must be an existing file"); 
-                                _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                                if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                                 sourcesToRemove.Add(source);
                                 continue;
                             }
@@ -1166,7 +1208,7 @@ namespace ASTools.Core.Tools.Templates
                         if(!File.Exists(instruction.Destinations[0].Path))
                         {
                             if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} AddXmlElement error - {instruction.Destinations[0].Path} must be an existing file"); 
-                            _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                            if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                             instructionsToRemove.Add(instruction); // Serious error -> Remove the entire instruction
                             continue;
                         }
@@ -1183,7 +1225,7 @@ namespace ASTools.Core.Tools.Templates
                             if (!Utilities.IsXPathPresent(instruction.Destinations[0].Path,xmlElementGroup.Path))
                             {
                                 if (!instruction.ErrorActionIgnore) _compilationErrors.Add($"Instruction {1+_config.Instructions.IndexOf(instruction)} XmlElementGroup error - Path {xmlElementGroup.Path} not found in {instruction.Destinations[0]?.Path}"); 
-                                _compilationResult = _compilationResult && !instruction.ErrorActionContinue && !instruction.ErrorActionIgnore;                   
+                                if (!instruction.ErrorActionContinue && !instruction.ErrorActionIgnore) _compilationResult = false;                   
                                 xmlElementsGroupsToRemove.Add(xmlElementGroup);
                                 continue;
                             }
@@ -1208,7 +1250,7 @@ namespace ASTools.Core.Tools.Templates
         }
         public void SetKeywordValue(TemplateConfigClass.KeywordClass keyword)
         {
-            if (_config.Keywords != null && keyword.ID != string.Empty)
+            if (_config.Keywords != null && _config.Keywords.Any(_ => _.ID == keyword.ID))
                 _config.Keywords.First(_ => _.ID == keyword.ID).Value = keyword.Value; 
             else throw new Exception($"Wrong keyword {keyword} provided!");
         }

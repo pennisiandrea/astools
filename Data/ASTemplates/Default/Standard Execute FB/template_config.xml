@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+	<Keywords>
+		<Keyword ID="__fb_name__" />	
+	</Keywords>
+
+	<Instructions>	
+
+		<Instruction Type="Copy">
+			<Sources>
+				<Source Type="Package">$TEMPLATE_PATH\__fb_name__</Source>
+				<Source Type="File">$TEMPLATE_PATH\__fb_name__Types.typ</Source>
+			</Sources>
+			<Destination>$USER_PATH</Destination>
+		</Instruction>
+		
+		<Instruction Type="Append">
+			<Source Type="File">$TEMPLATE_PATH\library.fun</Source>
+			<Destination>$USER_PATH\$SEARCH_FUNCTION(LibraryFUNFile)</Destination>
+		</Instruction>
+	</Instructions>
+
+	<SearchFunctions>
+		<SearchFunction ID="LibraryFUNFile">
+			<TargetType>File</TargetType>
+			<TargetExtension>.fun</TargetExtension>
+		</SearchFunction>
+	</SearchFunctions>
+
+</Template>

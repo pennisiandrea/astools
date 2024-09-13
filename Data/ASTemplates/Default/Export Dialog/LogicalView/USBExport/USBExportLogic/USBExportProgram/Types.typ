@@ -19,7 +19,7 @@ TYPE
 		OldState : MachineStateEnum; (*Actual state*)
 		ActualState : MachineStateEnum; (*Actual state*)
 		NextState : MachineStateEnum; (*Next state*)
-		NewTriggerState : BOOL; (*Trigger state change*)
+		NewStateTrigger : BOOL; (*Trigger state change*)
 		TimeoutTimer : TON; (*State timeout*)
 		StepByStepEnable : BOOL;
 		StepByStepTrigger : BOOL;

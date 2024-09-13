@@ -4,17 +4,16 @@
 		<Keyword ID="__fb_name__" />	
 	</Keywords>
 
-	<Instructions>
+	<Instructions>	
+
 		<Instruction Type="Copy">
-			<Source Type="Package">$TEMPLATE_PATH\__fb_name__</Source>
+			<Sources>
+				<Source Type="Package">$TEMPLATE_PATH\__fb_name__</Source>
+				<Source Type="File">$TEMPLATE_PATH\__fb_name__Types.typ</Source>
+			</Sources>
 			<Destination>$USER_PATH</Destination>
 		</Instruction>
 		
-		<Instruction Type="Copy">
-			<Source Type="File">$TEMPLATE_PATH\__fb_name__Types.typ</Source>
-			<Destination>$USER_PATH</Destination>
-		</Instruction>
-
 		<Instruction Type="Append">
 			<Source Type="File">$TEMPLATE_PATH\library.fun</Source>
 			<Destination>$USER_PATH\$SEARCH_FUNCTION(LibraryFUNFile)</Destination>

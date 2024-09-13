@@ -119,6 +119,8 @@ public partial class TemplatesPage : Page
 
         // Load selected template
         LoadTemplate(loadedTemplate.RepositoryName,loadedTemplate.Name);
+        
+        templatesListGrid.Focus();
     }
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {

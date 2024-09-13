@@ -1,14 +1,42 @@
+(*********************************************************************************
+ * Copyright: -
+ * Author:    Pennisi Andrea 
+ * Created:   September 13, 2024/8:18 AM 
+ * Description:
+		The purpose of this program is to provide a way to export data from the PLC
+		to an external USB device. To accomplish this, a dialog for mappView is
+		included as part of this template. 
+		How does it work? After inserting the USB device into the PLC, the dialog  
+		automatically appears. The operator can choose between 3 options:
+			- Diagnostics, which exports a system dump and the alarm historian.
+			- Recipes, which exports all recipes.
+			- Settings, which exports the settings of the machine. 
+		Once the USB is removed, the dialog disappears.
+		In case of error, gUSBExport.Commands.Reset must be used to reset the machine state. 
+ * Requirements:
+		- The USB device must be formatted as FAT32.
+		- mappAlarmX is used to throw error conditions. A link to mappAlarmX core must
+		be assigned in the PROGRAM _INIT.
+		- The export of alarm historian must be managed by an external program, the 
+		interface (Export/ExportFails/ExportDone) must be assigned in the PROGRAM _INIT.
+		- Recipes and Settings are expected to already be available like files in the PLC 
+		memory, stored in different folders and file devices, which must be assigned in the PROGRAM _INIT. 
+		The same approach applies to the alarm historian export file.
+		- Assign usb_link and USBExportProgram to Cyclics. Usb_link shall be assigned to a fast task, 
+		USBExportProgram can run in a slower one with a good tolerance value.
+ *********************************************************************************)
+
 PROGRAM _INIT	
 	(* Links to other project's modules*)
-	AlarmXCoreMpLink ACCESS ADR(gAlarmXCore); // Link to mappAlarmX MpLink
-	AlarmXHistoryExportCommand ACCESS ADR(gAlarms.Commands.Export); // Command to export alarm history. Must be linked to MpAlarmXHistory.Export
-	AlarmXHistoryExportError ACCESS ADR(gAlarms.Feedbacks.ExportFails); // Feedback of export failed. Must be linked to MpAlarmXHistory.Error
-	AlarmXHistoryExportDone ACCESS ADR(gAlarms.Feedbacks.ExportDone); // Feedback of export done. Must be linked to MpAlarmXHistory.CommandDone
+	AlarmXCoreMpLink ACCESS ADR(gAlarmXCore); // Link to mappAlarmXCore MpLink.
+	AlarmXHistoryExportCommand ACCESS ADR(Export); // Command to export alarm history. Could be linked to MpAlarmXHistory.Export.
+	AlarmXHistoryExportError ACCESS ADR(ExportFails); // Feedback of export failed. Could be linked to MpAlarmXHistory.Error.
+	AlarmXHistoryExportDone ACCESS ADR(ExportDone); // Feedback of export done. Could be linked to MpAlarmXHistory.CommandDone.
 	
 	// These file devices must be available in the system and must be linked to different folders. 
-	DiagnosticsFileDevice := 'DIAGNOSTICS'; //File device linked to MpAlarmXHistory 
-	RecipesFileDevice := 'RECIPES'; //File device where recipes are saved
-	SettingsFileDevice := 'SETTINGS'; //File device where settings are saved
+	DiagnosticsFileDevice := 'DIAGNOSTICS'; //File device where alarm historian exports. 
+	RecipesFileDevice := 'RECIPES'; //File device where recipes are saved.
+	SettingsFileDevice := 'SETTINGS'; //File device where settings are saved.
 	
 	// Init
 	ResetFeedbacksAction;
@@ -25,6 +53,7 @@ PROGRAM _CYCLIC
 	
 	USBDeviceConnected := usb_link.status.total_valid_USB_connected>=1 AND usb_link.status.instance[0].usb_valid=USB_LINK_VALID;
 	IF NOT USBDeviceConnected THEN
+		ResetCommandsAction;
 		MachineState.NextState := WAITING_USB;
 	END_IF
 	
@@ -32,7 +61,8 @@ PROGRAM _CYCLIC
     MachineStateManagementAction;
     CASE MachineState.ActualState OF
         
-        INIT:
+		INIT:
+			ResetCommandsAction;
             MachineState.NextState := WAITING_USB;
         	
         WAITING_USB:
@@ -43,11 +73,6 @@ PROGRAM _CYCLIC
         
 		WAITING_COMMAND:
 			MachineState.TimeoutTimer.PT := T#0S; // Timeout disabled in this state
-			IF MachineState.NewTriggerState THEN
-				gUSBExport.Commands.ExportDiagnostics := FALSE;
-				gUSBExport.Commands.ExportRecipes := FALSE;
-				gUSBExport.Commands.ExportSettings := FALSE;
-			END_IF
 			
 			IF gUSBExport.Commands.ExportDiagnostics THEN
 				gUSBExport.Commands.ExportDiagnostics := FALSE;
@@ -73,7 +98,7 @@ PROGRAM _CYCLIC
 			
 		WAITING_DIAGNOSTICS_EXPORT:
 			MachineState.TimeoutTimer.PT := T#30S;
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				SdmSystemDumpFB.enable := TRUE;
 				AlarmXHistoryExportCommand := TRUE;
 				
@@ -108,7 +133,7 @@ PROGRAM _CYCLIC
 		
 		OPEN_SRC_FOLDER:
 			MachineState.TimeoutTimer.PT := T#10S;
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				DirOpenFB.enable := FALSE;
 				DirOpenFB.pDevice := ADR(SourceFileDevice);
 				
@@ -133,7 +158,7 @@ PROGRAM _CYCLIC
 			
 		GET_SRC_FOLDER_FILE_NAMES:
 			MachineState.TimeoutTimer.PT := T#120S;
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				brsmemset(ADR(FileList),0,SIZEOF(FileList));
 				brsmemset(ADR(DirReadExData),0,SIZEOF(DirReadExData));
 				FileNum := 0;
@@ -174,7 +199,7 @@ PROGRAM _CYCLIC
 			
 		CLOSE_SRC_FOLDER:
 			MachineState.TimeoutTimer.PT := T#10S;
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				DirCloseFB.enable := FALSE;
 				DirCloseFB.ident := FolderIdent;
 				
@@ -194,7 +219,7 @@ PROGRAM _CYCLIC
 			
 		CHECK_DEST_FOLDER:
 			MachineState.TimeoutTimer.PT := T#15S;
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				DirCreateFB.enable := FALSE;
 				DirCreateFB.pName := ADR(DestinationFolder);
 				
@@ -217,7 +242,7 @@ PROGRAM _CYCLIC
 			END_IF
 			
 		TRANSFER_FILES:
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				MachineState.TimeoutTimer.PT := MAX(T#5S,T#500ms * FileNum);
 				ActFileNum := 1;
 				DestinationFolder := CONCAT(DestinationFolder,'\');
@@ -259,7 +284,7 @@ PROGRAM _CYCLIC
 			END_IF
 			
 		DELETE_FILES:
-			IF MachineState.NewTriggerState THEN
+			IF MachineState.NewStateTrigger THEN
 				MachineState.TimeoutTimer.PT := MAX(T#5S,T#500ms * FileNum);
 				ActFileNum := 1;
 				

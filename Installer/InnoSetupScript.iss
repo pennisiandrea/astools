@@ -24,6 +24,7 @@ SetupIconFile={#MyProjectMainPath}\Data\Resources\Icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+LicenseFile={#MyProjectMainPath}\LICENSE.txt
 ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]

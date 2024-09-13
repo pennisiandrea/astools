@@ -3,7 +3,7 @@
  ********************************************************************
  * Package: usb_link
  * File: usb_link.typ
- * Author: niculiis
+ * Author: -
  * Created: July 01, 2013
  ********************************************************************
  * Data types of package usb_link
